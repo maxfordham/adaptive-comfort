@@ -10,8 +10,9 @@ sys.path.append(str(DIR_IES_MODULE))
 
 from ies.IES_eng_calcs import calc_op_temp, additional_cooling
 
-air_speed = np.array([[[0.1]], [[0.15]], [[0.2]], [[0.3]], [[0.4]], [[0.5]], [[0.6]], [[0.7]], [[0.8]]])
+# arr_air_speed = np.array([[[0.1]], [[0.15]], [[0.2]], [[0.3]], [[0.4]], [[0.5]], [[0.6]], [[0.7]], [[0.8]]])
 
+air_speed = np.array([[[0.15]]])
 # Now testing with real data saved from test job to obtain operative temperature
 
 # Get data
@@ -33,8 +34,13 @@ def calculate_operative_temps(arr_air_temp, air_speed, arr_mean_radiant_temp):
         )
     return arr_t_op_v
 
-arr_op_temp = calculate_operative_temps(arr_air_temp, air_speed, arr_mean_radiant_temp)
-print(arr_op_temp)
+
+
+
+if __name__ == "__main__":
+    arr_op_temp = calculate_operative_temps(arr_air_temp, air_speed, arr_mean_radiant_temp)
+    print(arr_op_temp)
+
 
 # See where temperature exceeds 26 degrees celsius
 # threshold_temp = 26
