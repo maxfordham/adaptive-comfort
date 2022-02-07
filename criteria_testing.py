@@ -8,6 +8,9 @@ PATH_TESTJOB1 = pathlib.Path("/mnt/c/engDev/git_mf/MF_examples/IES_Example_Model
 arr_op_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_operative_temperature.npy"))
 arr_max_adaptive_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_max_adaptive_temperature.npy"))
 arr_occupancy = np.load(str(PATH_TESTJOB1 / "data_rooms_occupancy.npy"))
+arr_sorted_room_ids = np.load(str(PATH_TESTJOB1 / "data_sorted_rooms.npy"))
+arr_room_id_to_name_map = np.load(str(PATH_TESTJOB1 / "data_room_id_to_name_map.npy"))
+
 
 # CONSTANTS
 d0 = date(2010, 1, 1)
@@ -27,7 +30,7 @@ def criterion_one(arr_op_temp, arr_max_adaptive_temp):
         arr_max_adaptive_temp ([type]): [description]
 
     Returns:
-        [type]: [description]
+        np.ndarray: Whether room has failed or not
     """
     #TODO: Review numpy vector multiplication.
     # Delta Ts
@@ -50,6 +53,8 @@ def criterion_one(arr_op_temp, arr_max_adaptive_temp):
 
     return arr_room_pass
 
+def criterion_two():
+    pass
 
 
 # IES CALCS
@@ -70,7 +75,13 @@ def deltaT(op_temp, max_adaptive_temp):
     return op_temp - max_adaptive_temp
 
 if __name__ == "__main__":
-    criterion_one(arr_op_temp, arr_max_adaptive_temp)
+    arr_room_pass = criterion_one(arr_op_temp, arr_max_adaptive_temp)
+    di_room_criterion_one = {"room": arr_sorted_room_ids, "pass/fail": arr_room_pass}
+    df = pd.DataFrame(di_room_criterion_one, columns=["room", "pass/fail"])
+    di_map = {room["model_body_ids"]: room["model_body_names"] for room in arr_room_id_to_name_map}
+    df["room"] = df["room"].map(di_map)   
+    print(df)
+
 
 def test_criterion_one(save=True):
     """Obtaining criterion one data between May and September (Inclusive).
