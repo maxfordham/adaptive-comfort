@@ -1,6 +1,7 @@
 import pathlib
 import numpy as np
 import pandas as pd
+import math
 from datetime import date
 
 PATH_TESTJOB1 = pathlib.Path("/mnt/c/engDev/git_mf/MF_examples/IES_Example_Models/TestJob1/")
@@ -10,6 +11,9 @@ arr_max_adaptive_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_max_adaptive_tem
 arr_occupancy = np.load(str(PATH_TESTJOB1 / "data_rooms_occupancy.npy"))
 arr_sorted_room_ids = np.load(str(PATH_TESTJOB1 / "data_sorted_rooms.npy"))
 arr_room_id_to_name_map = np.load(str(PATH_TESTJOB1 / "data_room_id_to_name_map.npy"))
+
+di_map = {room["model_body_ids"]: room["model_body_names"] for room in arr_room_id_to_name_map}
+arr_sorted_room_names = np.vectorize(di_map.get)(arr_sorted_room_ids)
 
 
 # CONSTANTS
@@ -21,8 +25,7 @@ dt_sept_end_day = d2 - d0
 may_start_hour = dt_may_start_day.days * 24
 sept_end_hour = dt_sept_end_day.days * 24
 
-
-def criterion_one(arr_op_temp, arr_max_adaptive_temp):
+def criterion_one(arr_deltaT):
     """[summary]
 
     Args:
@@ -33,10 +36,10 @@ def criterion_one(arr_op_temp, arr_max_adaptive_temp):
         np.ndarray: Whether room has failed or not
     """
     #TODO: Review numpy vector multiplication.
-    # Delta Ts
-    np_deltaT = np.vectorize(deltaT)
-    arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
+    np_round_half_up = np.vectorize(round_half_up)
+
     arr_deltaT_may_to_sept_incl = arr_deltaT[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
+    arr_deltaT_may_to_sept_incl = np_round_half_up(arr_deltaT_may_to_sept_incl)
     arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours)
 
@@ -47,15 +50,22 @@ def criterion_one(arr_op_temp, arr_max_adaptive_temp):
     print(arr_occupancy_3_percent)
 
     arr_criterion_one_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
-    print(arr_criterion_one_bool)
 
-    arr_room_pass = arr_criterion_one_bool.sum(axis=0, dtype=bool)
+    return arr_criterion_one_bool
 
-    return arr_room_pass
+def criterion_two(arr_deltaT):
+    np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
+    arr_deltaT_round = np_round_for_criteria_two(arr_deltaT)
+    arr_W_e = np.apply_along_axis(sum_every_24_elements, 2, arr_deltaT_round)  # sums every 24 elements along the "hours" axis
+    print(arr_W_e.shape)  # "hours" axis should become "days" axis. Will go from length 8760 to 365
+    arr_w = arr_W_e > 6
+    arr_criterion_two_bool = arr_w.sum(axis=2, dtype=bool)
+    return arr_criterion_two_bool
 
-def criterion_two():
-    pass
-
+def criterion_three(arr_deltaT):
+    arr_bool = arr_deltaT > 4
+    arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)
+    return arr_criterion_three_bool
 
 # IES CALCS
 
@@ -74,46 +84,79 @@ def deltaT(op_temp, max_adaptive_temp):
     """
     return op_temp - max_adaptive_temp
 
-if __name__ == "__main__":
-    arr_room_pass = criterion_one(arr_op_temp, arr_max_adaptive_temp)
-    di_room_criterion_one = {"room": arr_sorted_room_ids, "pass/fail": arr_room_pass}
-    df = pd.DataFrame(di_room_criterion_one, columns=["room", "pass/fail"])
-    di_map = {room["model_body_ids"]: room["model_body_names"] for room in arr_room_id_to_name_map}
-    df["room"] = df["room"].map(di_map)   
-    print(df)
-
-
-def test_criterion_one(save=True):
-    """Obtaining criterion one data between May and September (Inclusive).
+def round_half_up(value):
+    """Rounds 
 
     Args:
-        save (bool, optional): Whether to save data to csv. Defaults to True.
+        value ([type]): [description]
 
     Returns:
-        np.ndarray: Returns numpy array of operative temperature of rooms.
+        [type]: [description]
     """
+    if (value % 1) >= 0.5:
+        rounded_value = np.ceil(value)
+    else:
+        rounded_value = np.floor(value)
+    return rounded_value
 
+def round_for_criteria_two(value):
+    if value <= 0:
+        rounded_value = 0.0
+    elif (value % 1) >= 0.5:
+        rounded_value = np.ceil(value)
+    else:
+        rounded_value = np.floor(value)
+    return rounded_value
 
+def sum_every_n_elements(arr, n):
+    return np.reshape(arr, (-1, n)).sum(axis=1)
+
+def sum_every_24_elements(arr):
+    return sum_every_n_elements(arr, n=24)
+
+if __name__ == "__main__":
+    di_bool_map = {True: "Fail", False: "Pass"}
+
+    np_deltaT = np.vectorize(deltaT)
+    arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
+
+    # Criterion 1
+    arr_criterion_one_bool = criterion_one(arr_deltaT)
+    # arr_criterion_one_bool = np.vectorize(di_bool_map.get)(arr_criterion_one_bool)  # Map true and false to fail and pass respectively
+    li_room_criterion_one = [{"Room Name": arr_sorted_room_names, "Criterion 1 (Pass/Fail)": arr_room} for arr_room in arr_criterion_one_bool]
+    di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_one)}  # TODO: Replace i with air speed value. 
+
+    # Criterion 2
+    arr_criterion_two_bool = criterion_two(arr_deltaT)
+    # arr_criterion_two_bool = np.vectorize(di_bool_map.get)(arr_criterion_two_bool)
+    li_room_criterion_two = [{"Room Name": arr_sorted_room_names, "Criterion 2 (Pass/Fail)": arr_room} for arr_room in arr_criterion_two_bool]
+    di_data_frames_criterion_two = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 2 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_two)}
+
+    # Criterion 3
+    arr_criterion_three_bool = criterion_three(arr_deltaT)
+    # arr_criterion_three_bool = np.vectorize(di_bool_map.get)(arr_criterion_three_bool)
+    li_room_criterion_three = [{"Room Name": arr_sorted_room_names, "Criterion 3 (Pass/Fail)": arr_room} for arr_room in arr_criterion_three_bool]
+    di_data_frames_criterion_three = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 3 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_three)}
+
+    # Merging
+    di_all_criteria_data_frames = {}
+    for i in range(arr_deltaT.shape[0]):  # Loop through number of air speeds
+        df_criteria_one_and_two = pd.merge(di_data_frames_criterion_one[i], di_data_frames_criterion_two[i], on=["Room Name"])
+        df_all_criteria = pd.merge(df_criteria_one_and_two, di_data_frames_criterion_three[i], on=["Room Name"])
+
+        df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.sum(axis=1) >= 2
+
+        # Map true and false to fail and pass respectively
+        li_columns_to_map = [
+            "Criterion 1 (Pass/Fail)",
+            "Criterion 2 (Pass/Fail)",
+            "Criterion 3 (Pass/Fail)",
+            "TM52 (Pass/Fail)"
+        ]
+        for column in li_columns_to_map:
+            df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+
+        di_all_criteria_data_frames[i] = df_all_criteria
     
-    
-    # Getting total hours deltaT is greater than or equal to 1 degrees
-    df_criterion_one_bool = df_criterion_one >= 1
-    df_total_hours_exceedance = df_criterion_one_bool.sum()
-    print(df_total_hours_exceedance)
-    
-    # Getting total occupied hours between May and September
-    di_rooms_occupancy = get_occupancy(
-        room_ids=li_room_ids, 
-        results_file_reader=self.results_file_reader, 
-        start_day=may_start_day,
-        end_day=sept_end_day
-        )
-    df_occupancy_bool = pd.DataFrame.from_dict(di_rooms_occupancy) > 0  # At what hour in which room are there occupants.
-    df_total_hours_occupied = df_occupancy_bool.sum()  # Sum occupancy hours for each room.
-    df_3_percent_total_hours_occupied = df_total_hours_occupied*0.03
-    print(df_3_percent_total_hours_occupied)
-    
-    df_criterion_pass_bool = df_total_hours_exceedance > df_3_percent_total_hours_occupied  # Compare rooms whether 
-    print(df_criterion_pass_bool)  # If any True then that room has failed.
-    
-    return df_criterion_pass_bool
+    di_all_criteria_data_frames
+    print("done")
