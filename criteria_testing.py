@@ -47,11 +47,11 @@ def criterion_one(arr_deltaT):
     factor = arr_deltaT.shape[2]/8760
     if factor > 1:  # TODO: Check is also int
         f = functools.partial(mean_every_n_elements, n=factor)
-        arr_deltaT_hourly = np.apply_along_axis(f, 2, arr_deltaT)
+        arr_deltaT = np.apply_along_axis(f, 2, arr_deltaT)
 
     np_round_half_up = np.vectorize(round_half_up)
 
-    arr_deltaT_may_to_sept_incl = arr_deltaT_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
+    arr_deltaT_may_to_sept_incl = arr_deltaT[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
     arr_deltaT_may_to_sept_incl = np_round_half_up(arr_deltaT_may_to_sept_incl)
     arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours)
@@ -60,7 +60,6 @@ def criterion_one(arr_deltaT):
     arr_occupancy_may_to_sept_incl = arr_occupancy[:, may_start_hour:sept_end_hour]
     arr_occupancy_bool = arr_occupancy_may_to_sept_incl > 0  # Hours where occupied
     arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # axis 1 is hours
-    print(arr_occupancy_3_percent)
 
     arr_criterion_one_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
 
@@ -72,7 +71,7 @@ def criterion_two(arr_deltaT):
     n = arr_deltaT_round.shape[2]/365  # Factor to take arr_deltaT to daily
     f = functools.partial(sum_every_n_elements, n=n)
     arr_W_e = np.apply_along_axis(f, 2, arr_deltaT_round)  # sums every n elements along the "time step" axis
-    print(arr_W_e.shape)  # "time step" axis should now become "days" axis.
+    # "time step" axis should now become "days" axis.
     arr_w = arr_W_e > 6
     arr_criterion_two_bool = arr_w.sum(axis=2, dtype=bool)
     return arr_criterion_two_bool
@@ -124,7 +123,7 @@ def round_for_criteria_two(value):
     return rounded_value
 
 def mean_every_n_elements(arr, n=24, axis=1):
-    return np.reshape(arr, (-1, n)).sum(axis)
+    return np.reshape(arr, (-1, n)).mean(axis)
 
 def sum_every_n_elements(arr, n=24, axis=1):
     return np.reshape(arr, (-1, n)).sum(axis)
@@ -135,9 +134,10 @@ def repeat_every_element_n_times(arr, n=24, axis=1):
 if __name__ == "__main__":
     di_bool_map = {True: "Fail", False: "Pass"}
 
-    f = functools.partial(repeat_every_element_n_times, n=2, axis=0)
-    arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
-
+    if arr_max_adaptive_temp.shape[0] != arr_op_temp.shape[2]:
+        n = arr_op_temp.shape[2]/arr_max_adaptive_temp.shape[0]
+        f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
+        arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
 
     np_deltaT = np.vectorize(deltaT)
     arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
