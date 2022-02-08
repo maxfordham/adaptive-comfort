@@ -6,9 +6,14 @@ import numpy as np
 import pandas as pd
 from datetime import date
 
-# from lib import xlsx_templater
+PATH_MODULE = pathlib.Path(__file__).parent
+sys.path.append(str(PATH_MODULE / "lib"))
+
+from xlsx_templater import to_excel
 
 PATH_TESTJOB1 = pathlib.Path("/mnt/c/engDev/git_mf/MF_examples/IES_Example_Models/TestJob1/")
+
+arr_air_speed = np.array([[[0.1]], [[0.15]], [[0.2]], [[0.3]], [[0.4]], [[0.5]], [[0.6]], [[0.7]], [[0.8]]])
 
 arr_op_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_operative_temperature.npy"))
 arr_max_adaptive_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_max_adaptive_temperature.npy"))
@@ -67,7 +72,7 @@ def criterion_two(arr_deltaT):
     n = arr_deltaT_round.shape[2]/365  # Factor to take arr_deltaT to daily
     f = functools.partial(sum_every_n_elements, n=n)
     arr_W_e = np.apply_along_axis(f, 2, arr_deltaT_round)  # sums every n elements along the "time step" axis
-    print(arr_W_e.shape)  # "hours" axis should become "days" axis. Will go from length 8760 to 365
+    print(arr_W_e.shape)  # "time step" axis should now become "days" axis.
     arr_w = arr_W_e > 6
     arr_criterion_two_bool = arr_w.sum(axis=2, dtype=bool)
     return arr_criterion_two_bool
@@ -137,29 +142,32 @@ if __name__ == "__main__":
     np_deltaT = np.vectorize(deltaT)
     arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
 
+    li_air_speeds = [float(i[0][0]) for i in arr_air_speed]
+    li_air_speeds_str = [str(speed) for speed in li_air_speeds]
+
     # Criterion 1
     arr_criterion_one_bool = criterion_one(arr_deltaT)
     # arr_criterion_one_bool = np.vectorize(di_bool_map.get)(arr_criterion_one_bool)  # Map true and false to fail and pass respectively
     li_room_criterion_one = [{"Room Name": arr_sorted_room_names, "Criterion 1 (Pass/Fail)": arr_room} for arr_room in arr_criterion_one_bool]
-    di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_one)}  # TODO: Replace i with air speed value. 
+    di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in zip(li_air_speeds_str, li_room_criterion_one)}  # TODO: Replace i with air speed value. 
 
     # Criterion 2
     arr_criterion_two_bool = criterion_two(arr_deltaT)
     # arr_criterion_two_bool = np.vectorize(di_bool_map.get)(arr_criterion_two_bool)
     li_room_criterion_two = [{"Room Name": arr_sorted_room_names, "Criterion 2 (Pass/Fail)": arr_room} for arr_room in arr_criterion_two_bool]
-    di_data_frames_criterion_two = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 2 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_two)}
+    di_data_frames_criterion_two = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 2 (Pass/Fail)"]) for i, j in zip(li_air_speeds_str, li_room_criterion_two)}
 
     # Criterion 3
     arr_criterion_three_bool = criterion_three(arr_deltaT)
     # arr_criterion_three_bool = np.vectorize(di_bool_map.get)(arr_criterion_three_bool)
     li_room_criterion_three = [{"Room Name": arr_sorted_room_names, "Criterion 3 (Pass/Fail)": arr_room} for arr_room in arr_criterion_three_bool]
-    di_data_frames_criterion_three = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 3 (Pass/Fail)"]) for i, j in enumerate(li_room_criterion_three)}
+    di_data_frames_criterion_three = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 3 (Pass/Fail)"]) for i, j in zip(li_air_speeds_str, li_room_criterion_three)}
 
     # Merging
-    di_all_criteria_data_frames = {}
-    for i in range(arr_deltaT.shape[0]):  # Loop through number of air speeds
-        df_criteria_one_and_two = pd.merge(di_data_frames_criterion_one[i], di_data_frames_criterion_two[i], on=["Room Name"])
-        df_all_criteria = pd.merge(df_criteria_one_and_two, di_data_frames_criterion_three[i], on=["Room Name"])
+    li_all_criteria_data_frames = []
+    for speed in li_air_speeds_str:  # Loop through number of air speeds
+        df_criteria_one_and_two = pd.merge(di_data_frames_criterion_one[speed], di_data_frames_criterion_two[speed], on=["Room Name"])
+        df_all_criteria = pd.merge(df_criteria_one_and_two, di_data_frames_criterion_three[speed], on=["Room Name"])
 
         df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.sum(axis=1) >= 2
 
@@ -173,7 +181,11 @@ if __name__ == "__main__":
         for column in li_columns_to_map:
             df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
-        di_all_criteria_data_frames[i] = df_all_criteria
+        di_all_criteria_data_frame = {
+            "sheet_name": speed,
+            "df": df_all_criteria,
+        }
+        li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
-    di_all_criteria_data_frames
+    to_excel(data_object=li_all_criteria_data_frames, fpth="test_output.xlsx", open=False)
     print("done")
