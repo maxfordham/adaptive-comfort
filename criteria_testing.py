@@ -44,7 +44,7 @@ def criterion_one(arr_deltaT):
     Returns:
         np.ndarray: Whether room has failed or not
     """
-    factor = arr_deltaT.shape[2]/8760
+    factor = int(arr_deltaT.shape[2]/8760)
     if factor > 1:  # TODO: Check is also int
         f = functools.partial(mean_every_n_elements, n=factor)
         arr_deltaT = np.apply_along_axis(f, 2, arr_deltaT)
@@ -68,7 +68,7 @@ def criterion_one(arr_deltaT):
 def criterion_two(arr_deltaT):
     np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
     arr_deltaT_round = np_round_for_criteria_two(arr_deltaT)
-    n = arr_deltaT_round.shape[2]/365  # Factor to take arr_deltaT to daily
+    n = int(arr_deltaT_round.shape[2]/365)  # Factor to take arr_deltaT to daily
     f = functools.partial(sum_every_n_elements, n=n)
     arr_W_e = np.apply_along_axis(f, 2, arr_deltaT_round)  # sums every n elements along the "time step" axis
     # "time step" axis should now become "days" axis.
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     di_bool_map = {True: "Fail", False: "Pass"}
 
     if arr_max_adaptive_temp.shape[0] != arr_op_temp.shape[2]:
-        n = arr_op_temp.shape[2]/arr_max_adaptive_temp.shape[0]
+        n = int(arr_op_temp.shape[2]/arr_max_adaptive_temp.shape[0])
         f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
         arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
 
