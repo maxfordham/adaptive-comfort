@@ -1,8 +1,12 @@
+# import sys
+import functools
+import sys
 import pathlib
 import numpy as np
 import pandas as pd
-import math
 from datetime import date
+
+# from lib import xlsx_templater
 
 PATH_TESTJOB1 = pathlib.Path("/mnt/c/engDev/git_mf/MF_examples/IES_Example_Models/TestJob1/")
 
@@ -35,10 +39,14 @@ def criterion_one(arr_deltaT):
     Returns:
         np.ndarray: Whether room has failed or not
     """
-    #TODO: Review numpy vector multiplication.
+    factor = arr_deltaT.shape[2]/8760
+    if factor > 1:  # TODO: Check is also int
+        f = functools.partial(mean_every_n_elements, n=factor)
+        arr_deltaT_hourly = np.apply_along_axis(f, 2, arr_deltaT)
+
     np_round_half_up = np.vectorize(round_half_up)
 
-    arr_deltaT_may_to_sept_incl = arr_deltaT[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
+    arr_deltaT_may_to_sept_incl = arr_deltaT_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
     arr_deltaT_may_to_sept_incl = np_round_half_up(arr_deltaT_may_to_sept_incl)
     arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours)
@@ -56,7 +64,9 @@ def criterion_one(arr_deltaT):
 def criterion_two(arr_deltaT):
     np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
     arr_deltaT_round = np_round_for_criteria_two(arr_deltaT)
-    arr_W_e = np.apply_along_axis(sum_every_24_elements, 2, arr_deltaT_round)  # sums every 24 elements along the "hours" axis
+    n = arr_deltaT_round.shape[2]/365  # Factor to take arr_deltaT to daily
+    f = functools.partial(sum_every_n_elements, n=n)
+    arr_W_e = np.apply_along_axis(f, 2, arr_deltaT_round)  # sums every n elements along the "time step" axis
     print(arr_W_e.shape)  # "hours" axis should become "days" axis. Will go from length 8760 to 365
     arr_w = arr_W_e > 6
     arr_criterion_two_bool = arr_w.sum(axis=2, dtype=bool)
@@ -108,14 +118,21 @@ def round_for_criteria_two(value):
         rounded_value = np.floor(value)
     return rounded_value
 
-def sum_every_n_elements(arr, n):
-    return np.reshape(arr, (-1, n)).sum(axis=1)
+def mean_every_n_elements(arr, n=24, axis=1):
+    return np.reshape(arr, (-1, n)).sum(axis)
 
-def sum_every_24_elements(arr):
-    return sum_every_n_elements(arr, n=24)
+def sum_every_n_elements(arr, n=24, axis=1):
+    return np.reshape(arr, (-1, n)).sum(axis)
+
+def repeat_every_element_n_times(arr, n=24, axis=1):
+    return np.repeat(arr, n, axis)
 
 if __name__ == "__main__":
     di_bool_map = {True: "Fail", False: "Pass"}
+
+    f = functools.partial(repeat_every_element_n_times, n=2, axis=0)
+    arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
+
 
     np_deltaT = np.vectorize(deltaT)
     arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
