@@ -1,6 +1,8 @@
 """IES calculations referenced from CIBSE guidance."""
-
+import functools
 import numpy as np
+
+from utils import mean_every_n_elements, repeat_every_element_n_times
 
 
 def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
@@ -77,6 +79,18 @@ def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
     return np.array(li_running_mean_temp_daily)
 
 
+def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
+    f = functools.partial(mean_every_n_elements, n=24, axis=1)
+    arr_dry_bulb_temp_daily = np.apply_along_axis(f, 0, arr_dry_bulb_temp_hourly)  # Convert hourly to daily
+    
+    running_mean_temp_startoff = get_running_mean_temp_startoff(arr_dry_bulb_temp_daily)  # Get running mean temp start off value
+    arr_running_mean_temp_daily = running_mean_temp_daily(running_mean_temp_startoff, arr_dry_bulb_temp_daily)  # Get rest of running mean temps
+
+    f = functools.partial(repeat_every_element_n_times, n=24, axis=0)
+    arr_running_mean_temp_hourly = np.apply_along_axis(f, 0, arr_running_mean_temp_daily) # Convert back to hourly
+    return arr_running_mean_temp_hourly
+
+
 def calculate_max_adaptive_temp(running_mean_temp, category_temp):
     """[summary]
 
@@ -103,6 +117,7 @@ def deltaT(op_temp, max_adaptive_temp):
         [type]: [description]
     """
     return op_temp - max_adaptive_temp
+
 
 # Vectorised Functions
 
