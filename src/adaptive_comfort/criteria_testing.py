@@ -103,8 +103,7 @@ if __name__ == "__main__":
 
     arr_deltaT = deltaT(arr_op_temp_v, arr_max_adaptive_temp)
 
-    li_air_speeds = [float(i[0][0]) for i in arr_air_speed]
-    li_air_speeds_str = [str(speed) for speed in li_air_speeds]
+    li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
     # Criterion 1
     arr_criterion_one_bool = criterion_one(arr_deltaT)
