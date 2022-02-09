@@ -11,28 +11,46 @@ sys.path.append(str(PATH_MODULE / "lib"))
 
 from xlsx_templater import to_excel
 
-PATH_TESTJOB1 = pathlib.Path("/mnt/c/engDev/git_mf/MF_examples/IES_Example_Models/TestJob1/")
+from constants import arr_air_speed, may_start_hour, sept_end_hour
+from ies_calcs import np_deltaT
+from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
+    round_half_up, round_for_criteria_two
 
-arr_air_speed = np.array([[[0.1]], [[0.15]], [[0.2]], [[0.3]], [[0.4]], [[0.5]], [[0.6]], [[0.7]], [[0.8]]])
+arr_air_temp
+arr_dry_bulb_temp
 
-arr_op_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_operative_temperature.npy"))
-arr_max_adaptive_temp = np.load(str(PATH_TESTJOB1 / "data_rooms_max_adaptive_temperature.npy"))
 arr_occupancy = np.load(str(PATH_TESTJOB1 / "data_rooms_occupancy.npy"))
 arr_sorted_room_ids = np.load(str(PATH_TESTJOB1 / "data_sorted_rooms.npy"))
 arr_room_id_to_name_map = np.load(str(PATH_TESTJOB1 / "data_room_id_to_name_map.npy"))
 
-di_map = {room["model_body_ids"]: room["model_body_names"] for room in arr_room_id_to_name_map}
+di_map = arr_room_id_to_name_map[0]
+
 arr_sorted_room_names = np.vectorize(di_map.get)(arr_sorted_room_ids)
 
 
-# CONSTANTS
-d0 = date(2010, 1, 1)
-d1 = date(2010, 5, 1)
-d2 = date(2010, 10, 1)
-dt_may_start_day = d1 - d0
-dt_sept_end_day = d2 - d0
-may_start_hour = dt_may_start_day.days * 24
-sept_end_hour = dt_sept_end_day.days * 24
+def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
+    li_running_mean_temp_daily = [temp_startoff]
+
+    for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
+        if i == 0:
+            pass
+        elif i == 1:
+            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], temp_startoff)
+            li_running_mean_temp_daily.append(running_mean_temp_result)
+        else: 
+            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], li_running_mean_temp_daily[i-1])
+            li_running_mean_temp_daily.append(running_mean_temp_result)
+            
+    return li_running_mean_temp_daily
+
+
+def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
+    arr_dry_bulb_temp_daily_avg = get_dry_bulb_temp_daily(arr_dry_bulb_temp_hourly)  # Convert hourly to daily
+    running_mean_temp_startoff = get_running_mean_temp_startoff(arr_dry_bulb_temp_daily_avg)  # Get running mean temp start off value
+    li_running_mean_temp_daily = running_mean_temp_daily(running_mean_temp_startoff, arr_dry_bulb_temp_daily_avg)  # Get rest of running mean temps
+    li_running_mean_temp_hourly = daily_value_list_into_hourly(li_running_mean_temp_daily)  # Convert back to hourly  # TODO: Replace with repeat_every_element_n_times
+    return np.array(li_running_mean_temp_hourly)
+
 
 def criterion_one(arr_deltaT):
     """[summary]
@@ -81,55 +99,7 @@ def criterion_three(arr_deltaT):
     arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)
     return arr_criterion_three_bool
 
-# IES CALCS
 
-def deltaT(op_temp, max_adaptive_temp):
-    """Returns the difference between the operative temperature and the
-    max-adaptive temperature.
-    
-    See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2
-
-    Args:
-        op_temp ([type]): [description]
-        max_adaptive_temp ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    return op_temp - max_adaptive_temp
-
-def round_half_up(value):
-    """Rounds 
-
-    Args:
-        value ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    if (value % 1) >= 0.5:
-        rounded_value = np.ceil(value)
-    else:
-        rounded_value = np.floor(value)
-    return rounded_value
-
-def round_for_criteria_two(value):
-    if value <= 0:
-        rounded_value = 0.0
-    elif (value % 1) >= 0.5:
-        rounded_value = np.ceil(value)
-    else:
-        rounded_value = np.floor(value)
-    return rounded_value
-
-def mean_every_n_elements(arr, n=24, axis=1):
-    return np.reshape(arr, (-1, n)).mean(axis)
-
-def sum_every_n_elements(arr, n=24, axis=1):
-    return np.reshape(arr, (-1, n)).sum(axis)
-
-def repeat_every_element_n_times(arr, n=24, axis=1):
-    return np.repeat(arr, n, axis)
 
 if __name__ == "__main__":
     di_bool_map = {True: "Fail", False: "Pass"}
@@ -139,7 +109,6 @@ if __name__ == "__main__":
         f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
         arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
 
-    np_deltaT = np.vectorize(deltaT)
     arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
 
     li_air_speeds = [float(i[0][0]) for i in arr_air_speed]
