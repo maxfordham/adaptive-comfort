@@ -17,7 +17,7 @@ from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_elem
     round_half_up, round_for_criteria_two, create_paths, fromfile
 
 
-def criterion_one(arr_deltaT):
+def criterion_one(arr_deltaT, arr_occupancy):
     """[summary]
 
     Args:
@@ -27,10 +27,11 @@ def criterion_one(arr_deltaT):
     Returns:
         np.ndarray: Whether room has failed or not
     """
-    factor = int(arr_deltaT.shape[2]/8760)
-    if factor > 1:  # TODO: Check is also int
+    factor = int(arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
+    if factor > 1:
         f = functools.partial(mean_every_n_elements, n=factor)
         arr_deltaT = np.apply_along_axis(f, 2, arr_deltaT)
+        arr_occupancy = np.apply_along_axis(f, 1, arr_occupancy)
 
     np_round_half_up = np.vectorize(round_half_up)
 
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     arr_criterion_one_bool = criterion_one(arr_deltaT)
     # arr_criterion_one_bool = np.vectorize(di_bool_map.get)(arr_criterion_one_bool)  # Map true and false to fail and pass respectively
     li_room_criterion_one = [{"Room Name": arr_sorted_room_names, "Criterion 1 (Pass/Fail)": arr_room} for arr_room in arr_criterion_one_bool]
-    di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in zip(li_air_speeds_str, li_room_criterion_one)}  # TODO: Replace i with air speed value. 
+    di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in zip(li_air_speeds_str, li_room_criterion_one)} 
 
     # Criterion 2
     arr_criterion_two_bool = criterion_two(arr_deltaT)

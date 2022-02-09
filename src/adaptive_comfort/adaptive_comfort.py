@@ -1,8 +1,15 @@
 """Main module."""
 
 import functools
+import sys
+import pathlib
 import numpy as np
 import pandas as pd
+
+PATH_MODULE = pathlib.Path(__file__).parent
+sys.path.append(str(PATH_MODULE / "lib"))
+
+from  xlsx_templater import to_excel
 
 from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
 from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
@@ -13,6 +20,12 @@ from criteria_testing import criterion_one, criterion_two, criterion_three
 class Tm52CalcWizard:
     def __init__(self):
         self.define_vars()
+        self.op_temp()
+        self.max_adaptive_temp()
+        self.deltaT()
+        self.run_criteria()
+        self.merge_dfs()
+        self.to_excel()
 
     def define_vars(self):
         paths = create_paths(DIR_TESTJOB1)
@@ -28,7 +41,6 @@ class Tm52CalcWizard:
         self.arr_occupancy = di_input_data["arr_occupancy"]
         self.arr_dry_bulb_temp = di_input_data["arr_dry_bulb_temp"]
         self.arr_sorted_room_names = np.vectorize(self.di_room_id_name_map.get)(self.arr_room_ids_sorted)
-        self.di_bool_map = {True: "Fail", False: "Pass"}
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
     def op_temp(self):
@@ -50,30 +62,53 @@ class Tm52CalcWizard:
     def deltaT(self):
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
-    def criterion_one(self):
-        arr_criterion_one_bool = criterion_one(self.arr_deltaT)
-        li_room_criterion_one = [{"Room Name": self.arr_sorted_room_names, "Criterion 1 (Pass/Fail)": arr_room} for arr_room in arr_criterion_one_bool]
-        self.di_data_frames_criterion_one = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 1 (Pass/Fail)"]) for i, j in zip(self.li_air_speeds_str, li_room_criterion_one)} 
-
-    def criterion_two(self):
-        arr_criterion_two_bool = criterion_two(self.arr_deltaT)
-        li_room_criterion_two = [{"Room Name": self.arr_sorted_room_names, "Criterion 2 (Pass/Fail)": arr_room} for arr_room in arr_criterion_two_bool]
-        di_data_frames_criterion_two = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 2 (Pass/Fail)"]) for i, j in zip(self.li_air_speeds_str, li_room_criterion_two)}
-
-    def criterion_three(self):
-        arr_criterion_three_bool = criterion_three(self.arr_deltaT)
-        li_room_criterion_three = [{"Room Name": self.arr_sorted_room_names, "Criterion 3 (Pass/Fail)": arr_room} for arr_room in arr_criterion_three_bool]
-        di_data_frames_criterion_three = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 3 (Pass/Fail)"]) for i, j in zip(self.li_air_speeds_str, li_room_criterion_three)}
-
     def run_criteria(self):
         di_criteria = {
-            "arr_criterion_one_bool": criterion_one(self.arr_deltaT),
-            "arr_criterion_two_bool": criterion_two(self.arr_deltaT),
-            "arr_criterion_three_bool": criterion_three(self.arr_deltaT),
+            "Criterion 1": criterion_one(self.arr_deltaT, self.arr_occupancy),
+            "Criterion 2": criterion_two(self.arr_deltaT),
+            "Criterion 3": criterion_three(self.arr_deltaT),
         }
-        for criterion in di_criteria:
-            li_room_criterion = [{"Room Name": self.arr_sorted_room_names, "Criterion 3 (Pass/Fail)": arr_room} for arr_room in criterion]
-            di_data_frames_criterion = {i: pd.DataFrame(j, columns=["Room Name", "Criterion 3 (Pass/Fail)"]) for i, j in zip(self.li_air_speeds_str, li_room_criterion)}
+        self.di_data_frame_criterion = {}
+        for name, criterion in di_criteria.items():
+            li_room_criterion = [{"Room Name": self.arr_sorted_room_names, "{0} (Pass/Fail)".format(name): arr_room} for arr_room in criterion]
+            di_data_frames_criterion = {speed: pd.DataFrame(j, columns=["Room Name", "{0} (Pass/Fail)".format(name)]) for speed, j in zip(self.li_air_speeds_str, li_room_criterion)}
+            self.di_data_frame_criterion[name] = di_data_frames_criterion
 
+    def merge_dfs(self):
+        self.li_all_criteria_data_frames = []
+        for speed in self.li_air_speeds_str:  # Loop through number of air speeds
+            df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
+            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criterion["Criterion 3"][speed], on=["Room Name"])
 
+            df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.sum(axis=1) >= 2
+
+            # Map true and false to fail and pass respectively
+            li_columns_to_map = [
+                "Criterion 1 (Pass/Fail)",
+                "Criterion 2 (Pass/Fail)",
+                "Criterion 3 (Pass/Fail)",
+                "TM52 (Pass/Fail)"
+            ]
+            di_bool_map = {True: "Fail", False: "Pass"}
+            for column in li_columns_to_map:
+                df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+
+            di_all_criteria_data_frame = {
+                "sheet_name": speed,
+                "df": df_all_criteria,
+            }
+            self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
+    def to_excel(self, on_linux=True):
+        file_name = "TM52__{0}.xlsx".format(self.di_project_info['project_name'])
+        fpth_results = pathlib.PureWindowsPath(self.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
+        if on_linux:
+            output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
+        else:
+            output_path = str(fpth_results)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
+        print("done")
+
+
+if __name__ == "__main__":
+    tm52_calc = Tm52CalcWizard()
