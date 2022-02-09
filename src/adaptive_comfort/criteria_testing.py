@@ -11,38 +11,10 @@ sys.path.append(str(PATH_MODULE / "lib"))
 
 from xlsx_templater import to_excel
 
-from constants import arr_air_speed, may_start_hour, sept_end_hour
-from ies_calcs import np_deltaT
+from constants import arr_air_speed, may_start_hour, sept_end_hour, DIR_TESTJOB1
+from ies_calcs import deltaT, running_mean_temp, running_mean_temp_daily, get_running_mean_temp_startoff, np_calc_op_temp, np_calculate_max_adaptive_temp
 from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
-    round_half_up, round_for_criteria_two
-
-arr_air_temp
-arr_dry_bulb_temp
-
-arr_occupancy = np.load(str(PATH_TESTJOB1 / "data_rooms_occupancy.npy"))
-arr_sorted_room_ids = np.load(str(PATH_TESTJOB1 / "data_sorted_rooms.npy"))
-arr_room_id_to_name_map = np.load(str(PATH_TESTJOB1 / "data_room_id_to_name_map.npy"))
-
-di_map = arr_room_id_to_name_map[0]
-
-arr_sorted_room_names = np.vectorize(di_map.get)(arr_sorted_room_ids)
-
-
-def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
-    li_running_mean_temp_daily = [temp_startoff]
-
-    for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
-        if i == 0:
-            pass
-        elif i == 1:
-            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], temp_startoff)
-            li_running_mean_temp_daily.append(running_mean_temp_result)
-        else: 
-            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], li_running_mean_temp_daily[i-1])
-            li_running_mean_temp_daily.append(running_mean_temp_result)
-            
-    return li_running_mean_temp_daily
-
+    round_half_up, round_for_criteria_two, create_paths, fromfile
 
 def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
     arr_dry_bulb_temp_daily_avg = get_dry_bulb_temp_daily(arr_dry_bulb_temp_hourly)  # Convert hourly to daily
@@ -51,6 +23,66 @@ def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
     li_running_mean_temp_hourly = daily_value_list_into_hourly(li_running_mean_temp_daily)  # Convert back to hourly  # TODO: Replace with repeat_every_element_n_times
     return np.array(li_running_mean_temp_hourly)
 
+def calculate_running_mean_temp_hourly_NEW(arr_dry_bulb_temp_hourly):
+    f = functools.partial(mean_every_n_elements, n=24, axis=1)
+    arr_dry_bulb_temp_daily = np.apply_along_axis(f, 0, arr_dry_bulb_temp)  # Convert hourly to daily
+    
+    running_mean_temp_startoff = get_running_mean_temp_startoff(arr_dry_bulb_temp_daily)  # Get running mean temp start off value
+    arr_running_mean_temp_daily = running_mean_temp_daily(running_mean_temp_startoff, arr_dry_bulb_temp_daily)  # Get rest of running mean temps
+
+    f = functools.partial(repeat_every_element_n_times, n=24, axis=0)
+    arr_running_mean_temp_hourly = np.apply_along_axis(f, 0, arr_running_mean_temp_daily) # Convert back to hourly
+    return arr_running_mean_temp_hourly
+
+
+def daily_value_list_into_hourly(daily_values_list):
+    '''
+    ## returns daily value list given hourly value list ##
+    
+    Args:
+        daily_values_list (list): daily value list
+    
+    Returns:
+        hourly_values_list (list): hourly value list
+    '''
+
+    hourly_values_list = []
+    num_days = len(daily_values_list)
+    for x in list(range(num_days)):
+        hourly_value_list = [daily_values_list[x]]*24
+        hourly_values_list.append(hourly_value_list)
+    
+    hourly_values_list = np.round([item for sublist in hourly_values_list for item in sublist],200)
+    
+    return hourly_values_list
+
+
+def chunks(l, n):
+    '''
+    ## Chunk a list in sublists given the number of items in sublist ##
+    
+    Args:
+        l (list): list to be chunked    
+        n (int): number of items   
+        
+    Returns:
+        l (list): chunked list 
+    '''
+    # For item i in a range that is a length of l,
+    for i in range(0, len(l), n):
+        # Create an index range for l of n items:
+        yield l[i:i+n]
+
+
+def get_dry_bulb_temp_daily(arr_dry_bulb_temp_hourly):
+    li_dry_bulb_temp_hourly_chunks = list(chunks(arr_dry_bulb_temp_hourly, 24))  # list of sublists containing the days temps.  # TODO: Replace with mean_every_n_elements
+    
+    dry_bulb_temp_daily_avg = []
+    for dry_bulb_temp_chunk in li_dry_bulb_temp_hourly_chunks:
+        dry_bulb_temp_daily_avg.append(np.mean(dry_bulb_temp_chunk))   
+
+    arr_dry_bulb_temp_daily_avg = np.array(dry_bulb_temp_daily_avg)
+    return arr_dry_bulb_temp_daily_avg
 
 def criterion_one(arr_deltaT):
     """[summary]
@@ -102,14 +134,44 @@ def criterion_three(arr_deltaT):
 
 
 if __name__ == "__main__":
+    paths = create_paths(DIR_TESTJOB1)
+    di_input_data = fromfile(paths)
+
+    di_project_info = di_input_data["arr_project_info"].item()
+    di_aps_info = di_input_data["arr_aps_info"].item()
+    di_weather_file_info = di_input_data["arr_weather_file_info"].item()
+    di_room_id_name_map = di_input_data["arr_room_id_name_map"].item()
+    arr_room_ids_sorted = di_input_data["arr_room_ids_sorted"]
+    arr_air_temp = di_input_data["arr_air_temp"]
+    arr_mean_radiant_temp = di_input_data["arr_mean_radiant_temp"]
+    arr_occupancy = di_input_data["arr_occupancy"]
+    arr_dry_bulb_temp = di_input_data["arr_dry_bulb_temp"]
+
+    arr_sorted_room_names = np.vectorize(di_room_id_name_map.get)(arr_room_ids_sorted)
+
     di_bool_map = {True: "Fail", False: "Pass"}
 
-    if arr_max_adaptive_temp.shape[0] != arr_op_temp.shape[2]:
-        n = int(arr_op_temp.shape[2]/arr_max_adaptive_temp.shape[0])
+    # Calcs
+
+    arr_op_temp_v = np_calc_op_temp(
+            arr_air_temp,
+            arr_air_speed,
+            arr_mean_radiant_temp
+            )
+    arr_running_mean_temp = calculate_running_mean_temp_hourly(arr_dry_bulb_temp)
+    # TO REPLACE ABOVE
+    np.apply_along_axis(f, 1, arr_dry_bulb_temp).shape
+
+    cat_II_temp = 3  # For TM52 calculation use category 2
+    arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp)
+
+
+    if arr_max_adaptive_temp.shape[0] != arr_op_temp_v.shape[2]:
+        n = int(arr_op_temp_v.shape[2]/arr_max_adaptive_temp.shape[0])
         f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
         arr_max_adaptive_temp = np.apply_along_axis(f, 0, arr_max_adaptive_temp)
 
-    arr_deltaT = np_deltaT(arr_op_temp, arr_max_adaptive_temp)
+    arr_deltaT = deltaT(arr_op_temp_v, arr_max_adaptive_temp)
 
     li_air_speeds = [float(i[0][0]) for i in arr_air_speed]
     li_air_speeds_str = [str(speed) for speed in li_air_speeds]

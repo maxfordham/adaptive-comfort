@@ -61,6 +61,22 @@ def running_mean_temp(dry_bulb_temp_yest_avg, running_mean_yest, a=0.8):
     return ((1-a)*dry_bulb_temp_yest_avg + a*running_mean_yest)
 
 
+def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
+    li_running_mean_temp_daily = [temp_startoff]
+
+    for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
+        if i == 0:
+            pass
+        elif i == 1:
+            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], temp_startoff)
+            li_running_mean_temp_daily.append(running_mean_temp_result)
+        else: 
+            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], li_running_mean_temp_daily[i-1])
+            li_running_mean_temp_daily.append(running_mean_temp_result)
+            
+    return np.array(li_running_mean_temp_daily)
+
+
 def calculate_max_adaptive_temp(running_mean_temp, category_temp):
     """[summary]
 
