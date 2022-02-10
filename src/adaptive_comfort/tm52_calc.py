@@ -12,7 +12,7 @@ sys.path.append(str(PATH_MODULE / "lib"))
 from xlsx_templater import to_excel
 
 from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
-from utils import repeat_every_element_n_times, create_paths, fromfile, np_round_half_up
+from utils import repeat_every_element_n_times, create_paths, fromfile, np_round_for_criteria_two, np_round_half_up, mean_every_n_elements, sum_every_n_elements
 from constants import DIR_TESTJOB1, arr_air_speed
 from criteria_testing import criterion_one, criterion_two, criterion_three
 
@@ -54,11 +54,28 @@ class Tm52CalcWizard:
     def deltaT(self):
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
+    def run_criterion_one(self, arr_occupancy):
+        factor = int(self.arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
+        if factor > 1:
+            f = functools.partial(mean_every_n_elements, n=factor)
+            arr_deltaT_hourly = np.apply_along_axis(f, 2, self.arr_deltaT)
+            arr_occupancy = np.apply_along_axis(f, 1, arr_occupancy)
+        else:
+            arr_deltaT_hourly = self.arr_deltaT
+        
+        arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)
+        return criterion_one(arr_deltaT_hourly, arr_occupancy)
+
+    def run_criterion_two(self, arr_occupancy):
+        return criterion_two(self.arr_deltaT, arr_occupancy)
+
+    def run_criterion_three(self):
+        return criterion_three(self.arr_deltaT)
+
     def run_criteria(self, input):
-        self.arr_deltaT = np_round_half_up(self.arr_deltaT)  # Round delta T as specified by CIBSE TM52 guide.
-        arr_criterion_one_bool, arr_criterion_one_percent = criterion_one(self.arr_deltaT, input.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_percent = criterion_two(self.arr_deltaT)
-        arr_criterion_three_bool, arr_criterion_three_percent = criterion_three(self.arr_deltaT)
+        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(input.arr_occupancy)
+        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(input.arr_occupancy)
+        arr_criterion_three_bool, arr_criterion_three_percent = self.run_criterion_three()
 
         di_criteria = {
             "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent),
