@@ -1,6 +1,8 @@
 import pathlib
 import numpy as np
 
+from data_objs import Tm52InputPaths, Tm52InputData
+
 def round_half_up(value):
     """Rounds 
 
@@ -79,19 +81,19 @@ def fromfile(paths):
     di_input_data = {}
     for k, fpth in paths.__dict__.items():
         di_input_data[fpth.stem] = np.load(str(fpth))
-    return di_input_data
 
+    input_data = Tm52InputData()
+    input_data.di_project_info = di_input_data["arr_project_info"].item()
+    input_data.di_aps_info = di_input_data["arr_aps_info"].item()
+    input_data.di_weather_file_info = di_input_data["arr_weather_file_info"].item()
+    input_data.di_room_id_name_map = di_input_data["arr_room_id_name_map"].item()
+    input_data.arr_room_ids_sorted = di_input_data["arr_room_ids_sorted"]
+    input_data.arr_air_temp = di_input_data["arr_air_temp"]
+    input_data.arr_mean_radiant_temp = di_input_data["arr_mean_radiant_temp"]
+    input_data.arr_occupancy = di_input_data["arr_occupancy"]
+    input_data.arr_dry_bulb_temp = di_input_data["arr_dry_bulb_temp"]
 
-class Tm52InputPaths(object):
-    fpth_project_info = None
-    fpth_aps_info = None
-    fpth_weather_file_info = None
-    fpths_room_ids_sorted = None
-    fpths_room_id_name_map = None
-    fpth_air_temp = None
-    fpth_mean_radiant_temp = None
-    fpth_occupancy = None
-    fpth_dry_bulb_temp = None
+    return input_data
 
 
 if __name__ == "__main__":

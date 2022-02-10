@@ -9,49 +9,41 @@ import pandas as pd
 PATH_MODULE = pathlib.Path(__file__).parent
 sys.path.append(str(PATH_MODULE / "lib"))
 
-from  xlsx_templater import to_excel
+from xlsx_templater import to_excel
 
 from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
-from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
-    round_half_up, round_for_criteria_two, create_paths, fromfile, np_round_half_up
+from utils import repeat_every_element_n_times, create_paths, fromfile, np_round_half_up
 from constants import DIR_TESTJOB1, arr_air_speed
 from criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
-    def __init__(self):
-        self.define_vars()
-        self.op_temp()
-        self.max_adaptive_temp()
+    def __init__(self, input):
+        """[summary]
+
+        Args:
+            input (Tm52InputData): Class instace containing the required inputs.
+        """
+        self.define_vars(input)
+        self.op_temp(input)
+        self.max_adaptive_temp(input)
         self.deltaT()
         self.run_criteria()
         self.merge_dfs()
-        self.to_excel()
+        self.to_excel(input)
 
-    def define_vars(self):
-        paths = create_paths(DIR_TESTJOB1)
-        di_input_data = fromfile(paths)
-
-        self.di_project_info = di_input_data["arr_project_info"].item()
-        self.di_aps_info = di_input_data["arr_aps_info"].item()
-        self.di_weather_file_info = di_input_data["arr_weather_file_info"].item()
-        self.di_room_id_name_map = di_input_data["arr_room_id_name_map"].item()
-        self.arr_room_ids_sorted = di_input_data["arr_room_ids_sorted"]
-        self.arr_air_temp = di_input_data["arr_air_temp"]
-        self.arr_mean_radiant_temp = di_input_data["arr_mean_radiant_temp"]
-        self.arr_occupancy = di_input_data["arr_occupancy"]
-        self.arr_dry_bulb_temp = di_input_data["arr_dry_bulb_temp"]
-        self.arr_sorted_room_names = np.vectorize(self.di_room_id_name_map.get)(self.arr_room_ids_sorted)
+    def define_vars(self, input):        
+        self.arr_sorted_room_names = np.vectorize(input.di_room_id_name_map.get)(input.arr_room_ids_sorted)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
-    def op_temp(self):
+    def op_temp(self, input):
         self.arr_op_temp_v = np_calc_op_temp(
-            self.arr_air_temp,
+            input.arr_air_temp,
             arr_air_speed,
-            self.arr_mean_radiant_temp
+            input.arr_mean_radiant_temp
             )
 
-    def max_adaptive_temp(self):
-        arr_running_mean_temp = calculate_running_mean_temp_hourly(self.arr_dry_bulb_temp)
+    def max_adaptive_temp(self, input):
+        arr_running_mean_temp = calculate_running_mean_temp_hourly(input.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
         self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp)
         if self.arr_max_adaptive_temp.shape[0] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
@@ -62,9 +54,9 @@ class Tm52CalcWizard:
     def deltaT(self):
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
-    def run_criteria(self):
+    def run_criteria(self, input):
         self.arr_deltaT = np_round_half_up(self.arr_deltaT)  # Round delta T as specified by CIBSE TM52 guide.
-        arr_criterion_one_bool, arr_criterion_one_percent = criterion_one(self.arr_deltaT, self.arr_occupancy)
+        arr_criterion_one_bool, arr_criterion_one_percent = criterion_one(self.arr_deltaT, input.arr_occupancy)
         arr_criterion_two_bool, arr_criterion_two_percent = criterion_two(self.arr_deltaT)
         arr_criterion_three_bool, arr_criterion_three_percent = criterion_three(self.arr_deltaT)
 
@@ -113,9 +105,9 @@ class Tm52CalcWizard:
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
-    def to_excel(self, on_linux=True):
-        file_name = "TM52__{0}.xlsx".format(self.di_project_info['project_name'])
-        fpth_results = pathlib.PureWindowsPath(self.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
+    def to_excel(self, input, on_linux=True):
+        file_name = "TM52__{0}.xlsx".format(input.di_project_info['project_name'])
+        fpth_results = pathlib.PureWindowsPath(input.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
         if on_linux:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
@@ -125,4 +117,6 @@ class Tm52CalcWizard:
 
 
 if __name__ == "__main__":
-    tm52_calc = Tm52CalcWizard()
+    paths = create_paths(DIR_TESTJOB1)
+    tm52_input_data = fromfile(paths)
+    tm52_calc = Tm52CalcWizard(tm52_input_data)
