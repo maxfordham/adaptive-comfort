@@ -27,7 +27,7 @@ class Tm52CalcWizard:
         self.op_temp(input)
         self.max_adaptive_temp(input)
         self.deltaT()
-        self.run_criteria()
+        self.run_criteria(input)
         self.merge_dfs()
         self.to_excel(input)
 
