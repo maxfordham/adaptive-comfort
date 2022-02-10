@@ -83,8 +83,8 @@ class Tm52CalcWizard:
                 "{0} Percentage (%)".format(name): arr_room[1],
                 } for arr_room in criterion]
             di_data_frames_criterion = {
-                speed: pd.DataFrame(j, columns=["Room Name", "{0} Percentage (%)".format(name), "{0} (Pass/Fail)".format(name)]) 
-                    for speed, j in zip(self.li_air_speeds_str, li_room_criterion)
+                speed: pd.DataFrame(data, columns=["Room Name", "{0} Percentage (%)".format(name), "{0} (Pass/Fail)".format(name)]) 
+                    for speed, data in zip(self.li_air_speeds_str, li_room_criterion)
                 }
             self.di_data_frame_criterion[name] = di_data_frames_criterion
 
