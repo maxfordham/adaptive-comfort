@@ -1,31 +1,22 @@
-# import sys
 import functools
-import sys
-import pathlib
 import numpy as np
-import pandas as pd
-from datetime import date
 
-PATH_MODULE = pathlib.Path(__file__).parent
-sys.path.append(str(PATH_MODULE / "lib"))
-
-from xlsx_templater import to_excel
-
-from constants import arr_air_speed, may_start_hour, sept_end_hour, DIR_TESTJOB1
-from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
-from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
-    round_half_up, round_for_criteria_two, create_paths, fromfile
+from constants import may_start_hour, sept_end_hour
+from utils import mean_every_n_elements, sum_every_n_elements, round_for_criteria_two
 
 
 def criterion_one(arr_deltaT, arr_occupancy):
-    """[summary]
+    """Calculate hours of exceedance.
 
+    See CIBSE TM52: 2013, Page 13, Section 6.1.2a
+    
     Args:
-        arr_op_temp ([type]): [description]
-        arr_max_adaptive_temp ([type]): [description]
+        arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
+        arr_occupancy (numpy.ndarray): Occupancy (Number of people)
 
     Returns:
-        np.ndarray: Whether room has failed or not
+        tuple: First element contains boolean values where True means exceedance.
+            Second element contains the percentage of exceedance.
     """
     factor = int(arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
     if factor > 1:
@@ -47,6 +38,17 @@ def criterion_one(arr_deltaT, arr_occupancy):
     return arr_criterion_one_bool, arr_criterion_one_percent
 
 def criterion_two(arr_deltaT):
+    """Calculate daily weighted exceedance.
+
+    See CIBSE TM52: 2013, Page 13, Section 6.1.2b
+
+    Args:
+        arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
+
+    Returns:
+        tuple: First element contains boolean values where True means exceedance.
+            Second element contains the percentage of how often exceedance occurred.
+    """
     np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
     arr_deltaT_round = np_round_for_criteria_two(arr_deltaT)
     n = int(arr_deltaT_round.shape[2]/365)  # Factor to take arr_deltaT to daily
@@ -59,6 +61,17 @@ def criterion_two(arr_deltaT):
     return arr_criterion_two_bool, arr_criterion_two_percent
 
 def criterion_three(arr_deltaT):
+    """Checks whether delta T exceeds 4K at any point. K meaning kelvin
+
+    See CIBSE TM52: 2013, Page 13, Section 6.1.2c
+
+    Args:
+        arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
+
+    Returns:
+        tuple: First element contains boolean values where True means exceedance.
+            Second element contains the percentage of exceedance.
+    """
     arr_bool = arr_deltaT > 4
     arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)
     arr_criterion_three_percent = (arr_bool.sum(axis=2) / 8760) * 100
