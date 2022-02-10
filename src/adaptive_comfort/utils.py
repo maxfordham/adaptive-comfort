@@ -28,6 +28,7 @@ def round_for_criteria_two(value):
         rounded_value = np.floor(value)
     return rounded_value
 
+np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
 
 def mean_every_n_elements(arr, n=24, axis=1):
     return np.reshape(arr, (-1, n)).mean(axis)
@@ -91,7 +92,7 @@ class Tm52InputPaths(object):
     fpth_mean_radiant_temp = None
     fpth_occupancy = None
     fpth_dry_bulb_temp = None
-    
+
 
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1

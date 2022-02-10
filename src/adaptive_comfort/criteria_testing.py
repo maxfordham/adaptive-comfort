@@ -2,7 +2,7 @@ import functools
 import numpy as np
 
 from constants import may_start_hour, sept_end_hour
-from utils import mean_every_n_elements, sum_every_n_elements, round_for_criteria_two
+from utils import mean_every_n_elements, sum_every_n_elements, np_round_for_criteria_two
 
 
 def criterion_one(arr_deltaT, arr_occupancy):
@@ -49,7 +49,6 @@ def criterion_two(arr_deltaT):
         tuple: First element contains boolean values where True means exceedance.
             Second element contains the percentage of how often exceedance occurred.
     """
-    np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
     arr_deltaT_round = np_round_for_criteria_two(arr_deltaT)
     n = int(arr_deltaT_round.shape[2]/365)  # Factor to take arr_deltaT to daily
     f = functools.partial(sum_every_n_elements, n=n)
