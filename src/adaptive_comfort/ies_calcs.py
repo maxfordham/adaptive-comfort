@@ -118,11 +118,11 @@ def deltaT(op_temp, max_adaptive_temp):
     return op_temp - max_adaptive_temp
 
 def daily_weighted_exceedance(arr_deltaT_occupied):
-    arr_deltaT_occupied = np_round_for_criteria_two(arr_deltaT_occupied)
-    n = int(arr_deltaT_occupied.shape[2]/365)  # Factor to take arr_deltaT time-step to daily
+    arr_weighting_factors = np_round_for_criteria_two(arr_deltaT_occupied)
+    n = int(arr_weighting_factors.shape[2]/365)  # Factor to sum arr_weighting_factors for each
     f = functools.partial(sum_every_n_elements, n=n)  # We want to sum the intervals so the array represents daily intervals
-    time_step = 8760/arr_deltaT_occupied.shape[2]  # If half hour steps then time_step = 1/2
-    return time_step * np.apply_along_axis(f, 2, arr_deltaT_occupied)
+    time_step = 8760/arr_weighting_factors.shape[2]  # If half hour steps then time_step = 1/2
+    return time_step * np.apply_along_axis(f, 2, arr_weighting_factors)
 
 # Vectorised Functions
 

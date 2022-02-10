@@ -59,12 +59,13 @@ class Tm52CalcWizard:
         if factor > 1:
             f = functools.partial(mean_every_n_elements, n=factor)
             arr_deltaT_hourly = np.apply_along_axis(f, 2, self.arr_deltaT)
-            arr_occupancy = np.apply_along_axis(f, 1, arr_occupancy)
+            arr_occupancy_hourly = np.apply_along_axis(f, 1, arr_occupancy)
         else:
             arr_deltaT_hourly = self.arr_deltaT
+            arr_occupancy_hourly = arr_occupancy
         
         arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)
-        return criterion_one(arr_deltaT_hourly, arr_occupancy)
+        return criterion_one(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self, arr_occupancy):
         return criterion_two(self.arr_deltaT, arr_occupancy)
