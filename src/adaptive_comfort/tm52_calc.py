@@ -17,7 +17,7 @@ from constants import DIR_TESTJOB1, arr_air_speed
 from criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
-    def __init__(self, input):
+    def __init__(self, input, on_linux=True):
         """[summary]
 
         Args:
@@ -29,7 +29,7 @@ class Tm52CalcWizard:
         self.deltaT()
         self.run_criteria(input)
         self.merge_dfs()
-        self.to_excel(input)
+        self.to_excel(input, on_linux)
 
     def define_vars(self, input):        
         self.arr_sorted_room_names = np.vectorize(input.di_room_id_name_map.get)(input.arr_room_ids_sorted)
