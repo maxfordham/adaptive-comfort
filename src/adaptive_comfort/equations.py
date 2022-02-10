@@ -2,7 +2,7 @@
 import functools
 import numpy as np
 
-from utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_criteria_two
+from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_criteria_two
 
 def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """

@@ -6,15 +6,11 @@ import pathlib
 import numpy as np
 import pandas as pd
 
-PATH_MODULE = pathlib.Path(__file__).parent
-sys.path.append(str(PATH_MODULE / "lib"))
-
-from xlsx_templater import to_excel
-
-from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
-from utils import repeat_every_element_n_times, create_paths, fromfile, np_round_for_criteria_two, np_round_half_up, mean_every_n_elements, sum_every_n_elements
-from constants import arr_air_speed
-from criteria_testing import criterion_one, criterion_two, criterion_three
+from adaptive_comfort.xlsx_templater import to_excel
+from adaptive_comfort.equations import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
+from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, np_round_half_up, mean_every_n_elements
+from adaptive_comfort.constants import arr_air_speed
+from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
     def __init__(self, input, on_linux=True):

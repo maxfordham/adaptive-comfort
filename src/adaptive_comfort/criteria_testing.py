@@ -1,9 +1,9 @@
 import functools
 import numpy as np
 
-from constants import may_start_hour, sept_end_hour
-from utils import np_round_half_up
-from ies_calcs import daily_weighted_exceedance
+from adaptive_comfort.constants import may_start_hour, sept_end_hour
+from adaptive_comfort.utils import np_round_half_up
+from adaptive_comfort.equations import daily_weighted_exceedance
 
 
 def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):

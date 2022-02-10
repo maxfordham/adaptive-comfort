@@ -1,7 +1,7 @@
 import pathlib
 import numpy as np
 
-from data_objs import Tm52InputPaths, Tm52InputData
+from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
 
 def round_half_up(value):
     """Rounds 
