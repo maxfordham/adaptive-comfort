@@ -13,7 +13,7 @@ from xlsx_templater import to_excel
 
 from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
 from utils import repeat_every_element_n_times, create_paths, fromfile, np_round_for_criteria_two, np_round_half_up, mean_every_n_elements, sum_every_n_elements
-from constants import DIR_TESTJOB1, arr_air_speed
+from constants import arr_air_speed
 from criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
@@ -135,6 +135,7 @@ class Tm52CalcWizard:
 
 
 if __name__ == "__main__":
+    from constants import DIR_TESTJOB1
     paths = create_paths(DIR_TESTJOB1)
     tm52_input_data = fromfile(paths)
     tm52_calc = Tm52CalcWizard(tm52_input_data)
