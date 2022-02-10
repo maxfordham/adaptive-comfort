@@ -33,10 +33,7 @@ def criterion_one(arr_deltaT, arr_occupancy):
         arr_deltaT = np.apply_along_axis(f, 2, arr_deltaT)
         arr_occupancy = np.apply_along_axis(f, 1, arr_occupancy)
 
-    np_round_half_up = np.vectorize(round_half_up)
-
     arr_deltaT_may_to_sept_incl = arr_deltaT[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
-    arr_deltaT_may_to_sept_incl = np_round_half_up(arr_deltaT_may_to_sept_incl)
     arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours)
 
@@ -46,10 +43,8 @@ def criterion_one(arr_deltaT, arr_occupancy):
     arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # axis 1 is hours
 
     arr_criterion_one_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
-
     arr_criterion_one_percent = (arr_room_total_hours_exceedance/arr_occupancy_3_percent)*100
-
-    return arr_criterion_one_bool
+    return arr_criterion_one_bool, arr_criterion_one_percent
 
 def criterion_two(arr_deltaT):
     np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
@@ -61,9 +56,10 @@ def criterion_two(arr_deltaT):
     arr_w = arr_W_e > 6
     arr_criterion_two_bool = arr_w.sum(axis=2, dtype=bool)
     arr_criterion_two_percent = (arr_w.sum(axis=2) / 365) * 100
-    return arr_criterion_two_bool
+    return arr_criterion_two_bool, arr_criterion_two_percent
 
 def criterion_three(arr_deltaT):
     arr_bool = arr_deltaT > 4
     arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)
-    return arr_criterion_three_bool
+    arr_criterion_three_percent = (arr_bool.sum(axis=2) / 8760) * 100
+    return arr_criterion_three_bool, arr_criterion_three_percent

@@ -13,7 +13,7 @@ from  xlsx_templater import to_excel
 
 from ies_calcs import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
 from utils import mean_every_n_elements, sum_every_n_elements, repeat_every_element_n_times, \
-    round_half_up, round_for_criteria_two, create_paths, fromfile
+    round_half_up, round_for_criteria_two, create_paths, fromfile, np_round_half_up
 from constants import DIR_TESTJOB1, arr_air_speed
 from criteria_testing import criterion_one, criterion_two, criterion_three
 
@@ -63,15 +63,29 @@ class Tm52CalcWizard:
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
     def run_criteria(self):
+        self.arr_deltaT = np_round_half_up(self.arr_deltaT)  # Round delta T as specified by CIBSE TM52 guide.
+        arr_criterion_one_bool, arr_criterion_one_percent = criterion_one(self.arr_deltaT, self.arr_occupancy)
+        arr_criterion_two_bool, arr_criterion_two_percent = criterion_two(self.arr_deltaT)
+        arr_criterion_three_bool, arr_criterion_three_percent = criterion_three(self.arr_deltaT)
+
         di_criteria = {
-            "Criterion 1": criterion_one(self.arr_deltaT, self.arr_occupancy),
-            "Criterion 2": criterion_two(self.arr_deltaT),
-            "Criterion 3": criterion_three(self.arr_deltaT),
+            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent),
+            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent),
+            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_percent),
         }
+
+        # Constructing dictionary of data frames for each air speed.
         self.di_data_frame_criterion = {}
         for name, criterion in di_criteria.items():
-            li_room_criterion = [{"Room Name": self.arr_sorted_room_names, "{0} (Pass/Fail)".format(name): arr_room} for arr_room in criterion]
-            di_data_frames_criterion = {speed: pd.DataFrame(j, columns=["Room Name", "{0} (Pass/Fail)".format(name)]) for speed, j in zip(self.li_air_speeds_str, li_room_criterion)}
+            li_room_criterion = [{
+                "Room Name": self.arr_sorted_room_names, 
+                "{0} (Pass/Fail)".format(name): arr_room[0],
+                "{0} Percentage (%)".format(name): arr_room[1],
+                } for arr_room in criterion]
+            di_data_frames_criterion = {
+                speed: pd.DataFrame(j, columns=["Room Name", "{0} Percentage (%)".format(name), "{0} (Pass/Fail)".format(name)]) 
+                    for speed, j in zip(self.li_air_speeds_str, li_room_criterion)
+                }
             self.di_data_frame_criterion[name] = di_data_frames_criterion
 
     def merge_dfs(self):

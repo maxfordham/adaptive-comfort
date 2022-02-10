@@ -17,6 +17,8 @@ def round_half_up(value):
     return rounded_value
 
 
+np_round_half_up = np.vectorize(round_half_up)
+
 def round_for_criteria_two(value):
     if value <= 0:
         rounded_value = 0.0
@@ -89,7 +91,7 @@ class Tm52InputPaths(object):
     fpth_mean_radiant_temp = None
     fpth_occupancy = None
     fpth_dry_bulb_temp = None
-
+    
 
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1

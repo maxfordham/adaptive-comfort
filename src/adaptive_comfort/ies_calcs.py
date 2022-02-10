@@ -125,4 +125,3 @@ np_calc_op_temp = np.vectorize(calc_op_temp)
 
 np_calculate_max_adaptive_temp = np.vectorize(calculate_max_adaptive_temp)
 
-
