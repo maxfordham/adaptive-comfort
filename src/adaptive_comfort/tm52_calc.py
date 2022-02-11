@@ -100,7 +100,7 @@ class Tm52CalcWizard:
 
     def create_df_criterion_definitions(self):
         di_criterion_defs = {
-            "Criterion 1 Percentage": ["The number of occupied hours where delta T excedes the threshold (1 kelvin) over the total occupied hours."],
+            "Criterion 1 Percentage": ["The number of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
             "Criterion 2 Percentage": ["The number of days exceeding the daily weight of 6 over the total days per year."],
             "Criterion 3 Percentage": ["The number of readings where delta T excedes the threshold (4 kelvin) over the total number of readings."],
         }
