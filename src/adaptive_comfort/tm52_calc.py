@@ -6,6 +6,10 @@ import pathlib
 import numpy as np
 import pandas as pd
 
+import sys; import pathlib
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+# for dev only
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, np_round_half_up, mean_every_n_elements
@@ -94,8 +98,24 @@ class Tm52CalcWizard:
                 }
             self.di_data_frame_criterion[name] = di_data_frames_criterion
 
+    def create_df_criterion_definitions(self):
+        di_criterion_defs = {
+            "Criterion 1 Percentage": ["The number of occupied hours where delta T excedes the threshold (1 kelvin) over the total occupied hours."],
+            "Criterion 2 Percentage": ["The number of days exceeding the daily weight of 6 over the total days per year."],
+            "Criterion 3 Percentage": ["The number of readings where delta T excedes the threshold (4 kelvin) over the total number of readings."],
+        }
+        df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
+        df = df.rename(columns={0: "Definition"})
+        return df.sort_index()
+
     def merge_dfs(self):
-        self.li_all_criteria_data_frames = []
+        # Obtaining criterion percentage defintions
+        di_criterion_defs = {
+            "sheet_name": "Criterion % Definitions",
+            "df": self.create_df_criterion_definitions(),
+        }
+
+        self.li_all_criteria_data_frames = [di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
             df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criterion["Criterion 3"][speed], on=["Room Name"])
