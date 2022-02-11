@@ -41,13 +41,13 @@ Now let's go through the steps the class takes upon instantiating it:
 """
 
 import functools
-import sys
 import pathlib
 import numpy as np
 import pandas as pd
 import datetime
 from collections import OrderedDict
 
+# import sys
 # sys.path.append(str(pathlib.Path(__file__).parents[1]))
 # # for dev only
 
@@ -59,10 +59,12 @@ from adaptive_comfort.criteria_testing import criterion_one, criterion_two, crit
 
 class Tm52CalcWizard:
     def __init__(self, inputs, on_linux=True):
-        """[summary]
+        """Calculates the operative temperature, maximum adaptive temperature, and delta T for each air speed
+        and produces the results in an excel spreadsheet. 
 
         Args:
-            inputs (Tm52InputData): Class instace containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
+            on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.op_temp(inputs)
         self.max_adaptive_temp(inputs)
@@ -72,6 +74,11 @@ class Tm52CalcWizard:
         self.to_excel(inputs, on_linux)
 
     def op_temp(self, inputs):
+        """Calculates the operative temperature for each air speed.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+        """
         self.arr_op_temp_v = np_calc_op_temp(
             inputs.arr_air_temp,
             arr_air_speed,
@@ -79,6 +86,11 @@ class Tm52CalcWizard:
             )
 
     def max_adaptive_temp(self, inputs):
+        """Calculates the maximum adaptive temperature for each air speed.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+        """
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
         self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
@@ -88,9 +100,22 @@ class Tm52CalcWizard:
             self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
 
     def deltaT(self):
+        """Calculates the temperature difference between the operative temperature and the maximum
+        adaptive temperature for each air speed.
+        """
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
     def run_criterion_one(self, arr_occupancy):
+        """Convert delta T and occupancy array so the reporting interval is hourly, round the values,
+        and then run criterion one.
+
+        Args:
+            arr_occupancy (numpy.ndarray): The number of people for each room per reporting interval
+
+        Returns:
+            tuple: First element contains boolean values where True means exceedance.
+                Second element contains the percentage of exceedance.
+        """
         factor = int(self.arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
         if factor > 1:
             f = functools.partial(mean_every_n_elements, n=factor)
@@ -104,12 +129,32 @@ class Tm52CalcWizard:
         return criterion_one(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self, arr_occupancy):
+        """Runs criterion two.
+
+        Args:
+            arr_occupancy (numpy.ndarray): The number of people for each room per reporting interval
+
+        Returns:
+            tuple: First element contains boolean values where True means exceedance.
+                Second element contains the percentage of exceedance.
+        """
         return criterion_two(self.arr_deltaT, arr_occupancy)
 
     def run_criterion_three(self):
+        """Runs criterion three.
+
+        Returns:
+            tuple: First element contains boolean values where True means exceedance.
+                Second element contains the percentage of exceedance.
+        """
         return criterion_three(self.arr_deltaT)
 
     def run_criteria(self, inputs):
+        """Runs all the criteria and collates them into a dictionary of data frames.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+        """
         arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
         arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_percent = self.run_criterion_three()
@@ -135,6 +180,14 @@ class Tm52CalcWizard:
             self.di_data_frame_criterion[name] = di_data_frames_criterion
 
     def create_df_project_info(self, inputs):
+        """Creates a data frame displaying the project information.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+
+        Returns:
+            pandas.DataFrame: Data frame of the project information from the IES API.
+        """
         di_project_info = OrderedDict([
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
@@ -154,6 +207,11 @@ class Tm52CalcWizard:
         return df
 
     def create_df_criterion_definitions(self):
+        """Creates a data frame describing the meaning of the criterion percentage values.
+
+        Returns:
+            pandas.DataFrame: Data frame of the criterion percentage definitions.
+        """
         di_criterion_defs = {
             "Criterion 1 Percentage": ["The number of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
             "Criterion 2 Percentage": ["The number of days exceeding the daily weight of 6 over the total days per year."],
@@ -164,6 +222,12 @@ class Tm52CalcWizard:
         return df.sort_index()
 
     def merge_dfs(self, inputs):
+        """Merge the project information, criterion percentage definitions, and criteria data frames within a list
+        which will then be passed onto the to_excel method.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+        """
         # Project info
         di_project_info = {
             "sheet_name": "Project Information",
@@ -205,6 +269,12 @@ class Tm52CalcWizard:
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
     def to_excel(self, inputs, on_linux=True):
+        """Output data frames to excel spreadsheet.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+            on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
+        """
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
         fpth_results = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
         if on_linux:
