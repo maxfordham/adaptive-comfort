@@ -37,7 +37,7 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
 def criterion_two(arr_deltaT, arr_occupancy):
     """Calculate daily weighted exceedance.
 
-    See CIBSE TM52: 2013, Page 13, Section 6.1.2b
+    See CIBSE TM52: 2013, Page 14, Section 6.1.2b
 
     Args:
         arr_deltaT_daily (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
@@ -57,7 +57,7 @@ def criterion_two(arr_deltaT, arr_occupancy):
 def criterion_three(arr_deltaT):
     """Checks whether delta T exceeds 4K at any point. K meaning kelvin
 
-    See CIBSE TM52: 2013, Page 13, Section 6.1.2c
+    See CIBSE TM52: 2013, Page 14, Section 6.1.2c
 
     Args:
         arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)

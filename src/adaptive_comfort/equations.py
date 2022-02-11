@@ -18,6 +18,8 @@ def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     Returns:
         op_temp (`float`): Operative Temp (C)
     """
+    if air_speed < 0.1:
+        air_speed = 0.1
     return ((air_temp*((10*air_speed)**(1/2))) + mean_radiant_temp) \
                 /(1+((10*air_speed)**(1/2)))
 
