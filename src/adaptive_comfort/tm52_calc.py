@@ -5,8 +5,9 @@ import sys
 import pathlib
 import numpy as np
 import pandas as pd
+import datetime
+from collections import OrderedDict
 
-import sys; import pathlib
 sys.path.append(str(pathlib.Path(__file__).parents[1]))
 # for dev only
 
@@ -17,33 +18,33 @@ from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
-    def __init__(self, input, on_linux=True):
+    def __init__(self, inputs, on_linux=True):
         """[summary]
 
         Args:
-            input (Tm52InputData): Class instace containing the required inputs.
+            inputs (Tm52InputData): Class instace containing the required inputs.
         """
-        self.define_vars(input)
-        self.op_temp(input)
-        self.max_adaptive_temp(input)
+        self.define_vars(inputs)
+        self.op_temp(inputs)
+        self.max_adaptive_temp(inputs)
         self.deltaT()
-        self.run_criteria(input)
-        self.merge_dfs()
-        self.to_excel(input, on_linux)
+        self.run_criteria(inputs)
+        self.merge_dfs(inputs)
+        self.to_excel(inputs, on_linux)
 
-    def define_vars(self, input):        
-        self.arr_sorted_room_names = np.vectorize(input.di_room_id_name_map.get)(input.arr_room_ids_sorted)
+    def define_vars(self, inputs):        
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
-    def op_temp(self, input):
+    def op_temp(self, inputs):
         self.arr_op_temp_v = np_calc_op_temp(
-            input.arr_air_temp,
+            inputs.arr_air_temp,
             arr_air_speed,
-            input.arr_mean_radiant_temp
+            inputs.arr_mean_radiant_temp
             )
 
-    def max_adaptive_temp(self, input):
-        arr_running_mean_temp = calculate_running_mean_temp_hourly(input.arr_dry_bulb_temp)
+    def max_adaptive_temp(self, inputs):
+        arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
         self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp)
         if self.arr_max_adaptive_temp.shape[0] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
@@ -73,9 +74,9 @@ class Tm52CalcWizard:
     def run_criterion_three(self):
         return criterion_three(self.arr_deltaT)
 
-    def run_criteria(self, input):
-        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(input.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(input.arr_occupancy)
+    def run_criteria(self, inputs):
+        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
+        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_percent = self.run_criterion_three()
 
         di_criteria = {
@@ -98,6 +99,25 @@ class Tm52CalcWizard:
                 }
             self.di_data_frame_criterion[name] = di_data_frames_criterion
 
+    def create_df_project_info(self, inputs):
+        di_project_info = OrderedDict([
+            ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
+            ("Weather File", inputs.di_aps_info['weather_file_path']),
+            ("Job Number", inputs.di_project_info['project_folder'][4:8]),  # TODO: Review how job number is obtained.
+            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
+            ("Analysed Air Speeds", self.li_air_speeds_str),
+            ("Weather File Year", str(inputs.di_weather_file_info["year"])),
+            ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),
+            ("Longitude", "{:.2f}".format(inputs.di_weather_file_info['longitude'])),
+            ("Latitude", "{:.2f}".format(inputs.di_weather_file_info['latitude'])),
+            ("Date of Analysis", str(datetime.datetime.now())),
+            ("IES_version", inputs.di_project_info['IES_version'])
+        ])
+
+        df = pd.DataFrame.from_dict(di_project_info, orient='index')
+        df = df.rename(columns={0: "Information"})
+        return df
+
     def create_df_criterion_definitions(self):
         di_criterion_defs = {
             "Criterion 1 Percentage": ["The number of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
@@ -108,14 +128,20 @@ class Tm52CalcWizard:
         df = df.rename(columns={0: "Definition"})
         return df.sort_index()
 
-    def merge_dfs(self):
+    def merge_dfs(self, inputs):
+        # Project info
+        di_project_info = {
+            "sheet_name": "Project Information",
+            "df": self.create_df_project_info(inputs),
+        }
+
         # Obtaining criterion percentage defintions
         di_criterion_defs = {
             "sheet_name": "Criterion % Definitions",
             "df": self.create_df_criterion_definitions(),
         }
 
-        self.li_all_criteria_data_frames = [di_criterion_defs]
+        self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
             df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criterion["Criterion 3"][speed], on=["Room Name"])
@@ -140,9 +166,9 @@ class Tm52CalcWizard:
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
-    def to_excel(self, input, on_linux=True):
-        file_name = "TM52__{0}.xlsx".format(input.di_project_info['project_name'])
-        fpth_results = pathlib.PureWindowsPath(input.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
+    def to_excel(self, inputs, on_linux=True):
+        file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
+        fpth_results = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
         if on_linux:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
