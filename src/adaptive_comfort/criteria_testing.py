@@ -1,4 +1,3 @@
-import functools
 import numpy as np
 
 from adaptive_comfort.constants import may_start_hour, sept_end_hour
@@ -19,7 +18,7 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
         tuple: First element contains boolean values where True means exceedance.
             Second element contains the percentage of exceedance.
     """
-    # TODO: Review Calc
+    # Delta T
     arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)  # Round delta T as specified by CIBSE TM52 guide.
     arr_deltaT_may_to_sept_incl = arr_deltaT_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
     arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
@@ -46,7 +45,6 @@ def criterion_two(arr_deltaT, arr_occupancy):
         tuple: First element contains boolean values where True means exceedance.
             Second element contains the percentage of how often exceedance occurred.
     """
-    # TODO: Review Calc
     arr_deltaT_occupied = np.where(arr_occupancy==0, 0, arr_deltaT)  # Sets cells in arr_deltaT to 0 where arr_occupancy is 0. We only want to consider occupied intervals.
     arr_daily_weights = daily_weighted_exceedance(arr_deltaT_occupied)
     arr_daily_weight_bool = arr_daily_weights > 6  # See which days exceed 6

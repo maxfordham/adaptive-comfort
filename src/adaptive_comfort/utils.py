@@ -1,3 +1,7 @@
+"""
+Miscellaneous functions used to support the calculation of TM52 and TM59 scripts.
+"""
+
 import pathlib
 import numpy as np
 
