@@ -8,15 +8,15 @@ def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
     Calculates Operative Temperature for Given Conditions
 
-    See CIBSE Guide A, Equation 1.2, Part 1.2.2
+    *See CIBSE Guide A, Equation 1.2, Part 1.2.2*
     
-    Arguments:
-        air_temp (`float`): Indoor Air Temp (C)
-        air_speed (`float`): Air Speed in room (m.s^-1)
-        mean_radiant_temp (`float`): Mean Radiant Temp (C)
+    Args:
+        air_temp (float): Indoor Air Temp (C)
+        air_speed (float): Air Speed in room (m.s^-1)
+        mean_radiant_temp (float): Mean Radiant Temp (C)
         
     Returns:
-        op_temp (`float`): Operative Temp (C)
+        op_temp (float): Operative Temp (C)
     """
     if air_speed < 0.1:
         air_speed = 0.1
@@ -28,14 +28,14 @@ def get_running_mean_temp_startoff(dry_bulb_temp_daily_avg):
     """
     Returns Running Mean Temperature Startoff Value
 
-    See CIBSE TM52: 2013, Equation 2.3, Box 2, Page 7, Section 3.3
+    *See CIBSE TM52: 2013, Equation 2.3, Box 2, Page 7, Section 3.3*
     
-    Arguments:
-        dry_bulb_temperature_daily_avg (`list of 365 items`): 
-            list of daily average values for the dry bulb temperature over a year
+    Args:
+        dry_bulb_temperature_daily_avg (numpy.ndarray): 
+            daily average values for the dry bulb temperature over a year
     
     Returns:
-        temp_startoff (`int`): returns the running mean temperature startoff value (C)
+        temp_startoff (int): returns the running mean temperature startoff value (C)
     """
     temp_startoff = round(((dry_bulb_temp_daily_avg[-1] 
         + dry_bulb_temp_daily_avg[-2]*0.8 
@@ -51,20 +51,29 @@ def running_mean_temp(dry_bulb_temp_yest_avg, running_mean_yest, a=0.8):
     """
     Returns Running Mean Temperature Startoff Value
 
-    See CIBSE TM52: 2013, Equation 2.2, Box 2, Page 7, Section 3.3
+    *See CIBSE TM52: 2013, Equation 2.2, Box 2, Page 7, Section 3.3*
     
-    Arguments:
-        dry_bulb_temp_yest_avg (`float`): Daily mean temperature for previous day (C)
-        running_mean_yest (`float`): Running mean temp for previous day (C)
-        a (`float, default=0.8`): Correlation constant
+    Args:
+        dry_bulb_temp_yest_avg (float): Daily mean temperature for previous day (C)
+        running_mean_yest (float): Running mean temp for previous day (C)
+        a (float, default=0.8): Correlation constant
     
     Returns: 
-        value (`float`):  Running Mean temp for current day (C)
+        value (float):  Running Mean temp for current day (C)
     """
     return ((1-a)*dry_bulb_temp_yest_avg + a*running_mean_yest)
 
 
 def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
+    """Calculates the running mean temperature daily.
+
+    Args:
+        temp_startoff (float): Running mean temperature start off value
+        arr_dry_bulb_temp_daily_avg (numpy.ndarray): The daily dry bulb temperature
+
+    Returns:
+        numpy.ndarray: Daily running mean temperature 
+    """
     li_running_mean_temp_daily = [temp_startoff]
 
     for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
@@ -81,6 +90,14 @@ def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
 
 
 def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
+    """Calculates the running mean temperature hourly.
+
+    Args:
+        arr_dry_bulb_temp_hourly (numpy.ndarray): The hourly dry bulb temperature.
+
+    Returns:
+        numpy.ndarray: Hourly running mean temperature
+    """
     f = functools.partial(mean_every_n_elements, n=24, axis=1)
     arr_dry_bulb_temp_daily = np.apply_along_axis(f, 0, arr_dry_bulb_temp_hourly)  # Convert hourly to daily
     
@@ -96,13 +113,13 @@ def additional_cooling(air_speed):
     """
     Returns adjustment to comfort temperature at high air speeds 
     
-    See CIBSE TM52: 2013, Equation 1, Page 5, Section 3.2.2
+    *See CIBSE TM52: 2013, Equation 1, Page 5, Section 3.2.2*
 
     Arguments:
-        air_speed (`float`): Air speed in room (m.s^-1)
+        air_speed (float): Air speed in room (m.s^-1)
             
     Returns:
-        value (`float`):  Adjustment Value for Comfort Temp (C)
+        value (float):  Adjustment Value for Comfort Temp (C)
     """
     if air_speed <= 0.1:
         return 0
@@ -114,13 +131,13 @@ def comfort_temp(running_mean_temp):
     """
     Returns Comfort Temperature for a given space.
     
-    See CIBSE Guide A, Equation 1.1.3, Part 1.5.3.4
+    *See CIBSE Guide A, Equation 1.1.3, Part 1.5.3.4*
     
     Arguments:
-        running_mean_temp (`float`): Running Mean of Temp in Room (C)
+        running_mean_temp (float): Running Mean of Temp in Room (C)
 
     Returns: 
-        value (`float`): Comfort Temperature (C)
+        value (float): Comfort Temperature (C)
     """
     return 0.33 * running_mean_temp + 18.8
 
@@ -129,18 +146,18 @@ def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
     """
     Returns Max Adaptive Temperature for a given space.
     
-    The maximum adaptive temperature is set to be a number of degrees above the comfort 
+    *The maximum adaptive temperature is set to be a number of degrees above the comfort 
     temperature, depending on the room category, as defined in CIBSE TM52:2013, Table 2, 
     Part 4.1.4. Comfort temperature is adjusted at higher air speeds, as defined in 
-    CIBSE TM52:2013, Equation 1, Part 3.2.2
+    CIBSE TM52:2013, Equation 1, Part 3.2.2*
     
     Arguments:
-        running_mean_temp (`float`): Running Mean of Temp in Room (C)
-        cat_adj (`int`): Adjustment factor, based on room category (C)
-        air_speed (`float`): Air Speed in Room (m.s^-1)
+        running_mean_temp (float): Running Mean of Temp in Room (C)
+        cat_adj (int): Adjustment factor, based on room category (C)
+        air_speed (float): Air Speed in Room (m.s^-1)
     
     Returns: 
-        value (`float`): Maximum Adaptive Temperature for given room and air speed (C)
+        value (float): Maximum Adaptive Temperature for given room and air speed (C)
     """
     return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj 
 
@@ -149,18 +166,26 @@ def deltaT(op_temp, max_adaptive_temp):
     """Returns the difference between the operative temperature and the
     max-adaptive temperature.
     
-    See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2
+    *See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
 
     Args:
-        op_temp ([type]): [description]
-        max_adaptive_temp ([type]): [description]
+        op_temp (float): Operative temperature
+        max_adaptive_temp (float): Maximum adaptive temperature
 
     Returns:
-        [type]: [description]
+        float: Change in temperature
     """
     return op_temp - max_adaptive_temp
 
 def daily_weighted_exceedance(arr_deltaT_occupied):
+    """Calculates the daily weighted exceedance.
+
+    Args:
+        arr_deltaT_occupied (numpy.ndarray): Delta T for only occupied times.
+
+    Returns:
+        numpy.ndarray: The daily weighted exceedance
+    """
     arr_weighting_factors = np_round_for_criteria_two(arr_deltaT_occupied)
     n = int(arr_weighting_factors.shape[2]/365)  # Factor to sum arr_weighting_factors for each
     f = functools.partial(sum_every_n_elements, n=n)  # We want to sum the intervals so the array represents daily intervals

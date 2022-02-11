@@ -50,17 +50,16 @@ def mean_every_n_elements(arr, n=24, axis=1):
 
     Example::
 
-    For example, if the array had 4 elements, after running this function, with n=2,
-    the array would consist of 2 elements which would be the means for those
-    2 element chunks.
+        # For example, if the array had 4 elements, after running this function, with n=2,
+        # the array would consist of 2 elements which would be the means for those
+        # 2 element chunks.
 
-        ```python
-            arr = np.array([1, 2, 3, 4])
-            n = 2
-            axis = 1
-            np.reshape(arr, (-1, n)).mean(axis)
-            >>> array([1.5, 3.5])
-        ```
+        arr = np.array([1, 2, 3, 4])
+        n = 2
+        axis = 1
+        np.reshape(arr, (-1, n)).mean(axis)
+        >>> array([1.5, 3.5])
+
 
     This function is used to convert the time-step intervals of an array such as going
     from hourly intervals to daily.
@@ -81,17 +80,15 @@ def sum_every_n_elements(arr, n=24, axis=1):
 
     Example::
 
-    For example, if the array had 4 elements, after running this function, with n=2,
-    the array would consist of 2 elements which would be the sums for those
-    2 element chunks.
+        # For example, if the array had 4 elements, after running this function, with n=2,
+        # the array would consist of 2 elements which would be the sums for those
+        # 2 element chunks.
 
-        ```python
-            arr = np.array([1, 2, 3, 4])
-            n = 2
-            axis = 1
-            np.reshape(arr, (-1, n)).sum(axis)
-            >>> array([3, 7])
-        ```
+        arr = np.array([1, 2, 3, 4])
+        n = 2
+        axis = 1
+        np.reshape(arr, (-1, n)).sum(axis)
+        >>> array([3, 7])
 
     This function is used to calculate the daily weighted exceedance.
 
@@ -111,17 +108,15 @@ def repeat_every_element_n_times(arr, n=24, axis=0):
 
     Example::
 
-    For example, if the array had 2 elements, after running this function, with n=2,
-    the array would consist of 4 elements which would be the elements repeated twice.
-    The repeated elements are appended next to one another.
+        # For example, if the array had 2 elements, after running this function, with n=2,
+        # the array would consist of 4 elements which would be the elements repeated twice.
+        # The repeated elements are appended next to one another.
 
-        ```python
-            arr = np.array([1, 2])
-            n = 2
-            axis = 0
-            np.repeat(arr, n, axis)
-            >>> array([1, 1, 2, 2])
-        ```
+        arr = np.array([1, 2])
+        n = 2
+        axis = 0
+        np.repeat(arr, n, axis)
+        >>> array([1, 1, 2, 2])
 
     This function is used to convert the time-step intervals of an array such as going
     from daily intervals to hourly.

@@ -2,42 +2,54 @@
 Calculation Procedure:
 
 The calculation is performed using the Tm52CalcWizard class. 
+
 The class takes two inputs:
-    *inputs: This is a Tm52InputData class instance. The data within the class:
-        *Project information
-        *Aps information
-        *Weather data
-        *Room air temperature
-        *Room mean radiant temperature
-        *Room occupancy
-        *Dry bulb temperature
-        *Room names and IDs
-    *on_linux: Boolean value based on whether the output path for the results needs to be given in linux or windows.
+    inputs:
+        This is a Tm52InputData class instance. The data within the class:
+            Project information
+            Aps information
+            Weather data
+            Room air temperature
+            Room mean radiant temperature
+            Room occupancy
+            Dry bulb temperature
+            Room names and IDs
 
-And outputs:
-    *An excel spreadsheet containing the results in the project folder.
+    on_linux: 
+        Boolean value based on whether the output path for the results needs to be given in linux or windows.
 
-Now let's go through the steps the class takes upon instantiating it:
-    1. [Tm52CalcWizard.op_temp(inputs)]: Calculates the operative temperature for each room that we want to analyse.
-    It'll do this for each air speed. 
-    _Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2_
-    2. [Tm52CalcWizard.max_adaptive_temp(inputs)]: Calculates the maximum adaptive temperature for each air speed.
-    _Reference: See CIBSE TM52:2013, Table 2, Part 4.1.4 and CIBSE TM52:2013, Equation 1, Part 3.2.2_
-    3. [Tm52CalcWizard.deltaT()]: Calculates changes in temperature for each room between the operative temperature and the maximum
-    adaptive temperature.
-    _Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2_
-    4. [Tm52CalcWizard.run_criteria(inputs)]: Run through the TM52 criteria.
-        *Criterion one: No room can have the delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
-        total occupied hours.
-        _Reference: See CIBSE TM52: 2013, Page 13, Section 6.1.2a_
-        *Criterion two: No room can have a daily weight greater the threshold (6) where the daily weight is calculated from the readings for reporting interval
-        during occupied hours.
-        _Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b_
-        *Criterion three: No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin).
-        _Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2c_
-    5. [Tm52CalcWizard.merge_dfs(inputs)]: Merges the data frames for project information, criterion percentage definitions, and the results for each 
-    air speed.
-    6. [Tm52CalcWizard.to_excel(inputs, on_linux)]: Outputs the dataframes to an excel spreadsheet in the project location.
+Outputs
+    An excel spreadsheet containing the results in the project folder.
+
+Process
+    1. Calculate The Operative Temperature
+        Calculate operative temperature for each room that we want to analyse.
+        It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+
+    2. Calculate The Maximum Adaptive Temperature
+        Calculate the maximum adaptive temperature for each room that we want to analyse.
+        It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+
+    3. Calculate Delta T
+        Calculates changes in temperature for each room between the operative temperature and the maximum
+        adaptive temperature. *Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
+
+    4. Run through the TM52 criteria
+        Criterion one 
+            No room can have the delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
+            total occupied hours. *Reference: See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
+        Criterion two
+            No room can have a daily weight greater the threshold (6) where the daily weight is calculated from the readings for reporting interval
+            during occupied hours. *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
+        Criterion three 
+            No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin). *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2c*
+
+    5. Merge Data Frames
+        Merges the data frames for project information, criterion percentage definitions, and the results for each 
+        air speed.
+
+    6. Output To Excel
+        Outputs the dataframes to an excel spreadsheet in the project location.
 """
 
 import functools

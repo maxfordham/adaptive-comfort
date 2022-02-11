@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import xlsxwriter as xw
-from datamine_functions import jobno_fromdir
+from adaptive_comfort.datamine_functions import jobno_fromdir
 import getpass
 import datetime
 import copy
