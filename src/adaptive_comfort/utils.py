@@ -8,10 +8,11 @@ import numpy as np
 from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
 
 def round_half_up(value):
-    """Rounds 
+    """If the decimal of value is between 0 and 0.5 then round down.
+    Else, round up.
 
     Args:
-        value (float): vValue we would like to round
+        value (float): Value we would like to round
 
     Returns:
         float: Rounded value
@@ -26,33 +27,121 @@ def round_half_up(value):
 np_round_half_up = np.vectorize(round_half_up)
 
 def round_for_criteria_two(value):
+    """Used for defining the weighing factor from delta T.
+    If value is less than or equal to 0 then the value shall be set to 0.
+    Else, round with round_half_up function.
+
+    Args:
+        value (float): Value we would like to round
+
+    Returns:
+        float: Rounded value
+    """
     if value <= 0:
         rounded_value = 0.0
-    elif (value % 1) >= 0.5:
-        rounded_value = np.ceil(value)
     else:
-        rounded_value = np.floor(value)
+        rounded_value = round_half_up(value)
     return rounded_value
 
 np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
 
 def mean_every_n_elements(arr, n=24, axis=1):
+    """Take the mean every n elements within an array.
+
+    Example::
+
+    For example, if the array had 4 elements, after running this function, with n=2,
+    the array would consist of 2 elements which would be the means for those
+    2 element chunks.
+
+        ```python
+            arr = np.array([1, 2, 3, 4])
+            n = 2
+            axis = 1
+            np.reshape(arr, (-1, n)).mean(axis)
+            >>> array([1.5, 3.5])
+        ```
+
+    This function is used to convert the time-step intervals of an array such as going
+    from hourly intervals to daily.
+
+    Args:
+        arr (numpy.ndarray): Array containing floats or ints.
+        n (int, optional): The number of elements we would like to calculate the mean of. Defaults to 24.
+        axis (int, optional): Which axis we would like to apply the function to. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The new numpy array where the mean has been taken every n elements.
+    """
     return np.reshape(arr, (-1, n)).mean(axis)
 
 
 def sum_every_n_elements(arr, n=24, axis=1):
+    """Take the sum every n elements within an array.
+
+    Example::
+
+    For example, if the array had 4 elements, after running this function, with n=2,
+    the array would consist of 2 elements which would be the sums for those
+    2 element chunks.
+
+        ```python
+            arr = np.array([1, 2, 3, 4])
+            n = 2
+            axis = 1
+            np.reshape(arr, (-1, n)).sum(axis)
+            >>> array([3, 7])
+        ```
+
+    This function is used to calculate the daily weighted exceedance.
+
+    Args:
+        arr (numpy.ndarray): Array containing floats or ints.
+        n (int, optional): The number of elements we would like to calculate the sum of. Defaults to 24.
+        axis (int, optional): Which axis we would like to apply the function to. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: The new numpy array where the sum has been taken every n elements.
+    """
     return np.reshape(arr, (-1, n)).sum(axis)
 
 
-def repeat_every_element_n_times(arr, n=24, axis=1):
+def repeat_every_element_n_times(arr, n=24, axis=0):
+    """Repeat each element within the array n times.
+
+    Example::
+
+    For example, if the array had 2 elements, after running this function, with n=2,
+    the array would consist of 4 elements which would be the elements repeated twice.
+    The repeated elements are appended next to one another.
+
+        ```python
+            arr = np.array([1, 2])
+            n = 2
+            axis = 0
+            np.repeat(arr, n, axis)
+            >>> array([1, 1, 2, 2])
+        ```
+
+    This function is used to convert the time-step intervals of an array such as going
+    from daily intervals to hourly.
+
+    Args:
+        arr (numpy.ndarray): Array containing floats or ints.
+        n (int, optional): How many times we would like repeat the elements within the array. Defaults to 24.
+        axis (int, optional): Which axis we would like to apply the function to. Defaults to 0.
+
+    Returns:
+        numpy.ndarray: The new numpy array where each element is now repeated n times.
+    """
     return np.repeat(arr, n, axis)
 
 
 def create_paths(fdir):
-    """Create paths for the input data from a given file directory.
+    """Create file paths for the input data from a given file directory.
 
     Args:
-        fdir (str): [description]
+        fdir (str): File directory containing the npy files.
 
     Returns:
         Tm52InputPaths: Returns a class object containing the required paths.
