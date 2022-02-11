@@ -8,12 +8,12 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-# for dev only
+# sys.path.append(str(pathlib.Path(__file__).parents[1]))
+# # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
-from adaptive_comfort.equations import deltaT, np_calc_op_temp, np_calculate_max_adaptive_temp, calculate_running_mean_temp_hourly
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, np_round_half_up, mean_every_n_elements
+from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_adaptive_temp
+from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, np_round_half_up
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
 
@@ -46,11 +46,11 @@ class Tm52CalcWizard:
     def max_adaptive_temp(self, inputs):
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
-        self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp)
-        if self.arr_max_adaptive_temp.shape[0] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
-            n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[0])
+        self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
+        if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
+            n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
-            self.arr_max_adaptive_temp = np.apply_along_axis(f, 0, self.arr_max_adaptive_temp)
+            self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
 
     def deltaT(self):
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)

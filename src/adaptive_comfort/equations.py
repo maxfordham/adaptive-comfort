@@ -90,16 +90,57 @@ def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
     return arr_running_mean_temp_hourly
 
 
-def calculate_max_adaptive_temp(running_mean_temp, category_temp):
-    """[summary]
-
-    Args:
-        running_mean_daily_temp ([type]): exponentially weighted running mean of the daily mean outdoor air temperature
-
-    Returns:
-        [type]: [description]
+def additional_cooling(air_speed):
     """
-    return 0.33*running_mean_temp + 18.8 + category_temp
+    Returns adjustment to comfort temperature at high air speeds 
+    
+    See CIBSE TM52: 2013, Equation 1, Page 5, Section 3.2.2
+
+    Arguments:
+        air_speed (`float`): Air speed in room (m.s^-1)
+            
+    Returns:
+        value (`float`):  Adjustment Value for Comfort Temp (C)
+    """
+    if air_speed <= 0.1:
+        return 0
+    else:
+        return 7-(50/(4+(10*(air_speed**0.5)))) 
+
+
+def comfort_temp(running_mean_temp):
+    """
+    Returns Comfort Temperature for a given space.
+    
+    See CIBSE Guide A, Equation 1.1.3, Part 1.5.3.4
+    
+    Arguments:
+        running_mean_temp (`float`): Running Mean of Temp in Room (C)
+
+    Returns: 
+        value (`float`): Comfort Temperature (C)
+    """
+    return 0.33 * running_mean_temp + 18.8
+
+
+def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
+    """
+    Returns Max Adaptive Temperature for a given space.
+    
+    The maximum adaptive temperature is set to be a number of degrees above the comfort 
+    temperature, depending on the room category, as defined in CIBSE TM52:2013, Table 2, 
+    Part 4.1.4. Comfort temperature is adjusted at higher air speeds, as defined in 
+    CIBSE TM52:2013, Equation 1, Part 3.2.2
+    
+    Arguments:
+        running_mean_temp (`float`): Running Mean of Temp in Room (C)
+        cat_adj (`int`): Adjustment factor, based on room category (C)
+        air_speed (`float`): Air Speed in Room (m.s^-1)
+    
+    Returns: 
+        value (`float`): Maximum Adaptive Temperature for given room and air speed (C)
+    """
+    return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj 
 
 
 def deltaT(op_temp, max_adaptive_temp):
