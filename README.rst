@@ -15,6 +15,7 @@ Features
 --------
 
 * TODO
+Add docstrings
 
 Credits
 -------
