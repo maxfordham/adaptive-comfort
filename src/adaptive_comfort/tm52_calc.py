@@ -174,7 +174,8 @@ class Tm52CalcWizard:
         else:
             output_path = str(fpth_results)
         to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
-        print("done")
+        print("TM52 Calculation Complete.")
+        print("Results File Path: {0}".format(str(fpth_results)))
 
 
 if __name__ == "__main__":
