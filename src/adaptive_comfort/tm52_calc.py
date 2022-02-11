@@ -1,4 +1,21 @@
-"""Main module."""
+"""
+calc procedure:
+
+1. [Tm52CalcWizard.define_vars(inputs)]
+
+2. calculate max adaptive for every air speed
+
+Inputs:
+    - rooms
+    - room mean radiant temperature
+    - room air temperature 
+    - room occupancy profile
+    - annual air temperature (drybulb)
+    - annual air temperature (radiative)
+
+Outputs:
+    - 
+"""
 
 import functools
 import sys
