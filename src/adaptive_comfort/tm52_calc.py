@@ -79,9 +79,9 @@ class Tm52CalcWizard:
         arr_criterion_three_bool, arr_criterion_three_percent = self.run_criterion_three()
 
         di_criteria = {
-            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent),
-            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent),
-            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_percent),
+            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
+            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
+            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_percent.round(2)),
         }
 
         # Constructing dictionary of data frames for each air speed.
