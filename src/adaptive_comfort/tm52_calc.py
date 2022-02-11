@@ -120,7 +120,8 @@ class Tm52CalcWizard:
             df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
             df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criterion["Criterion 3"][speed], on=["Room Name"])
 
-            df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.sum(axis=1) >= 2
+            # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
+            df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
 
             # Map true and false to fail and pass respectively
             li_columns_to_map = [
@@ -134,7 +135,7 @@ class Tm52CalcWizard:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
             di_all_criteria_data_frame = {
-                "sheet_name": speed,
+                "sheet_name": "Results, Air Speed {0}".format(speed),
                 "df": df_all_criteria,
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
