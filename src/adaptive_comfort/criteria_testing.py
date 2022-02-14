@@ -6,9 +6,10 @@ from adaptive_comfort.equations import daily_weighted_exceedance
 
 
 def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
-    """Calculate hours of exceedance.
+    """Calculates whether a room has exceeded the threshold for hours of exceedance. 
+    Also calculates the percentage of occupied hours exceeded out of total occupied hours for each room.
 
-    See CIBSE TM52: 2013, Page 13, Section 6.1.2a
+    *See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
     
     Args:
         arr_deltaT_hourly (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
@@ -34,9 +35,10 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
     return arr_criterion_one_bool, arr_criterion_one_percent
 
 def criterion_two(arr_deltaT, arr_occupancy):
-    """Calculate daily weighted exceedance.
+    """Calculates whether a room has exceeded the daily weighted exceedance.
+    Also calculates the percentage of days exceeding daily weight out of the total days.
 
-    See CIBSE TM52: 2013, Page 14, Section 6.1.2b
+    *See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
 
     Args:
         arr_deltaT_daily (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)
@@ -49,13 +51,14 @@ def criterion_two(arr_deltaT, arr_occupancy):
     arr_daily_weights = daily_weighted_exceedance(arr_deltaT_occupied)
     arr_daily_weight_bool = arr_daily_weights > 6  # See which days exceed 6
     arr_criterion_two_bool = arr_daily_weight_bool.sum(axis=2, dtype=bool) # sum the days for each room where exceedance occurs
-    arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of total days per year
+    arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
     return arr_criterion_two_bool, arr_criterion_two_percent
 
 def criterion_three(arr_deltaT):
-    """Checks whether delta T exceeds 4K at any point. K meaning kelvin
+    """Checks whether delta T exceeds 4K at any point. K meaning kelvin.
+    Also calculates the percentage of the number of readings exceeding 4K over total number of readings
 
-    See CIBSE TM52: 2013, Page 14, Section 6.1.2c
+    *See CIBSE TM52: 2013, Page 14, Section 6.1.2c*
 
     Args:
         arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max adaptive temperature)

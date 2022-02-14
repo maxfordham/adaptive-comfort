@@ -36,11 +36,11 @@ Process
 
     4. Run through the TM52 criteria
         Criterion one 
-            No room can have the delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
+            No room can have delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
             total occupied hours. *Reference: See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
         Criterion two
-            No room can have a daily weight greater the threshold (6) where the daily weight is calculated from the readings for reporting interval
-            during occupied hours. *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
+            No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
+            within occupied hours. *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
         Criterion three 
             No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin). *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2c*
 

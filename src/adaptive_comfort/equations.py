@@ -16,7 +16,7 @@ def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
         mean_radiant_temp (float): Mean Radiant Temp (C)
         
     Returns:
-        op_temp (float): Operative Temp (C)
+        float: Operative Temp (C)
     """
     if air_speed < 0.1:
         air_speed = 0.1
@@ -35,7 +35,7 @@ def get_running_mean_temp_startoff(dry_bulb_temp_daily_avg):
             daily average values for the dry bulb temperature over a year
     
     Returns:
-        temp_startoff (int): returns the running mean temperature startoff value (C)
+        int: returns the running mean temperature startoff value (C)
     """
     temp_startoff = round(((dry_bulb_temp_daily_avg[-1] 
         + dry_bulb_temp_daily_avg[-2]*0.8 
@@ -59,7 +59,7 @@ def running_mean_temp(dry_bulb_temp_yest_avg, running_mean_yest, a=0.8):
         a (float, default=0.8): Correlation constant
     
     Returns: 
-        value (float):  Running Mean temp for current day (C)
+        float:  Running Mean temp for current day (C)
     """
     return ((1-a)*dry_bulb_temp_yest_avg + a*running_mean_yest)
 
@@ -119,7 +119,7 @@ def additional_cooling(air_speed):
         air_speed (float): Air speed in room (m.s^-1)
             
     Returns:
-        value (float):  Adjustment Value for Comfort Temp (C)
+        float:  Adjustment Value for Comfort Temp (C)
     """
     if air_speed <= 0.1:
         return 0
@@ -137,7 +137,7 @@ def comfort_temp(running_mean_temp):
         running_mean_temp (float): Running Mean of Temp in Room (C)
 
     Returns: 
-        value (float): Comfort Temperature (C)
+        float: Comfort Temperature (C)
     """
     return 0.33 * running_mean_temp + 18.8
 
@@ -146,10 +146,10 @@ def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
     """
     Returns Max Adaptive Temperature for a given space.
     
-    *The maximum adaptive temperature is set to be a number of degrees above the comfort 
-    temperature, depending on the room category, as defined in CIBSE TM52:2013, Table 2, 
-    Part 4.1.4. Comfort temperature is adjusted at higher air speeds, as defined in 
-    CIBSE TM52:2013, Equation 1, Part 3.2.2*
+    The maximum adaptive temperature is set to be a number of degrees above the comfort 
+    temperature, depending on the room category, as defined in *CIBSE TM52:2013, Table 2, 
+    Part 4.1.4* Comfort temperature is adjusted at higher air speeds, as defined in 
+    *CIBSE TM52:2013, Equation 1, Part 3.2.2*
     
     Arguments:
         running_mean_temp (float): Running Mean of Temp in Room (C)
@@ -157,7 +157,7 @@ def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
         air_speed (float): Air Speed in Room (m.s^-1)
     
     Returns: 
-        value (float): Maximum Adaptive Temperature for given room and air speed (C)
+        float: Maximum Adaptive Temperature for given room and air speed (C)
     """
     return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj 
 
