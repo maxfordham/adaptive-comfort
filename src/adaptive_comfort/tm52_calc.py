@@ -5,7 +5,7 @@ The calculation is performed using the Tm52CalcWizard class.
 
 The class takes two inputs:
     inputs:
-        This is a TmInputData class instance. The data within the class:
+        This is a Tm52InputData class instance. The data within the class:
             Project information
             Aps information
             Weather data
@@ -75,7 +75,7 @@ class Tm52CalcWizard:
         and produces the results in an excel spreadsheet. 
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.op_temp(inputs)
@@ -89,7 +89,7 @@ class Tm52CalcWizard:
         """Calculates the operative temperature for each air speed.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
         """
         self.arr_op_temp_v = np_calc_op_temp(
             inputs.arr_air_temp,
@@ -101,7 +101,7 @@ class Tm52CalcWizard:
         """Calculates the maximum adaptive temperature for each air speed.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
         """
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
@@ -165,7 +165,7 @@ class Tm52CalcWizard:
         """Runs all the criteria and collates them into a dictionary of data frames.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
         """
         arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
         arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(inputs.arr_occupancy)
@@ -195,7 +195,7 @@ class Tm52CalcWizard:
         """Creates a data frame displaying the project information.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
 
         Returns:
             pandas.DataFrame: Data frame of the project information from the IES API.
@@ -238,7 +238,7 @@ class Tm52CalcWizard:
         which will then be passed onto the to_excel method.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
         """
         # Project info
         di_project_info = {
@@ -284,7 +284,7 @@ class Tm52CalcWizard:
         """Output data frames to excel spreadsheet.
 
         Args:
-            inputs (TmInputData): Class instance containing the required inputs.
+            inputs (Tm52InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])

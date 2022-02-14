@@ -73,6 +73,11 @@ def criterion_upper_limit_temperature(arr_deltaT):
     return arr_criterion_three_bool, arr_criterion_three_percent
 
 def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+    if arr_op_temp_v_hourly.shape[2] != 8760:
+        raise ValueError("Reporting intervals are not hourly for the operative temperature.")
     arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
-    print(arr_op_temp_v_bedroom_comfort)
+    arr_bedroom_comfort_exceed_temp_bool = arr_op_temp_v_bedroom_comfort > 26
+    arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
+    arr_bedroom_comfort_exceed_hours_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
+    print(arr_bedroom_comfort_exceed_hours_bool)
 

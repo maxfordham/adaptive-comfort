@@ -5,7 +5,7 @@ Miscellaneous functions used to support the calculation of TM52 and TM59 scripts
 import pathlib
 import numpy as np
 
-from adaptive_comfort.data_objs import TmInputPaths, TmInputData
+from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
 
 def round_half_up(value):
     """If the decimal of value is between 0 and 0.5 then round down.
@@ -153,9 +153,9 @@ def create_paths(fdir):
         fdir (str): File directory containing the npy files.
 
     Returns:
-        TmInputPaths: Returns a class object containing the required paths.
+        Tm52InputPaths: Returns a class object containing the required paths.
     """
-    paths = TmInputPaths()
+    paths = Tm52InputPaths()
     paths.fpth_project_info = pathlib.Path(fdir) / 'arr_project_info.npy'
     paths.fpth_aps_info = pathlib.Path(fdir) / 'arr_aps_info.npy'
     paths.fpth_weather_file_info = pathlib.Path(fdir) / 'arr_weather_file_info.npy'
@@ -172,7 +172,7 @@ def fromfile(paths):
     """Obtain input data which is dumped by IES API.
 
     Args:
-        paths (TmInputPaths): Created from create_paths function.
+        paths (Tm52InputPaths): Created from create_paths function.
 
     Returns:
         dict: Contains key value pairs of the dumped data from IES.
@@ -184,7 +184,7 @@ def fromfile(paths):
     for k, fpth in paths.__dict__.items():
         di_input_data[fpth.stem] = np.load(str(fpth))
 
-    input_data = TmInputData()
+    input_data = Tm52InputData()
     input_data.di_project_info = di_input_data["arr_project_info"].item()
     input_data.di_aps_info = di_input_data["arr_aps_info"].item()
     input_data.di_weather_file_info = di_input_data["arr_weather_file_info"].item()
