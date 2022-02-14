@@ -1,11 +1,11 @@
 import numpy as np
 
 from adaptive_comfort.constants import may_start_hour, sept_end_hour
-from adaptive_comfort.utils import np_round_half_up
+from adaptive_comfort.utils import np_round_half_up, filter_bedroom_comfort_time
 from adaptive_comfort.equations import daily_weighted_exceedance
 
 
-def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
+def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
     """Calculates whether a room has exceeded the threshold for hours of exceedance. 
     Also calculates the percentage of occupied hours exceeded out of total occupied hours for each room.
 
@@ -34,7 +34,7 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_criterion_one_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
     return arr_criterion_one_bool, arr_criterion_one_percent
 
-def criterion_two(arr_deltaT, arr_occupancy):
+def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     """Calculates whether a room has exceeded the daily weighted exceedance.
     Also calculates the percentage of days exceeding daily weight out of the total days.
 
@@ -54,7 +54,7 @@ def criterion_two(arr_deltaT, arr_occupancy):
     arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
     return arr_criterion_two_bool, arr_criterion_two_percent
 
-def criterion_three(arr_deltaT):
+def criterion_upper_limit_temperature(arr_deltaT):
     """Checks whether delta T exceeds 4K at any point. K meaning kelvin.
     Also calculates the percentage of the number of readings exceeding 4K over total number of readings
 
@@ -71,3 +71,8 @@ def criterion_three(arr_deltaT):
     arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)  # Sum for each room to see if there is at least one exceedance
     arr_criterion_three_percent = (arr_bool.sum(axis=2) / arr_deltaT.shape[2]) * 100  # Percentage of number of readings exceeding 4K over total number of readings
     return arr_criterion_three_bool, arr_criterion_three_percent
+
+def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+    arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
+    print(arr_op_temp_v_bedroom_comfort)
+

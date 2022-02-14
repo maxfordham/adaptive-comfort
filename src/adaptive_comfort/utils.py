@@ -5,7 +5,7 @@ Miscellaneous functions used to support the calculation of TM52 and TM59 scripts
 import pathlib
 import numpy as np
 
-from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
+from adaptive_comfort.data_objs import TmInputPaths, TmInputData
 
 def round_half_up(value):
     """If the decimal of value is between 0 and 0.5 then round down.
@@ -26,7 +26,7 @@ def round_half_up(value):
 
 np_round_half_up = np.vectorize(round_half_up)
 
-def round_for_criteria_two(value):
+def round_for_daily_weighted_exceedance(value):
     """Used for defining the weighing factor from delta T.
     If value is less than or equal to 0 then the value shall be set to 0.
     Else, round with round_half_up function.
@@ -43,7 +43,7 @@ def round_for_criteria_two(value):
         rounded_value = round_half_up(value)
     return rounded_value
 
-np_round_for_criteria_two = np.vectorize(round_for_criteria_two)
+np_round_for_daily_weighted_exceedance = np.vectorize(round_for_daily_weighted_exceedance)
 
 def mean_every_n_elements(arr, n=24, axis=1):
     """Take the mean every n elements within an array.
@@ -132,6 +132,20 @@ def repeat_every_element_n_times(arr, n=24, axis=0):
     return np.repeat(arr, n, axis)
 
 
+
+def filter_bedroom_comfort_one_day(arr):
+    return np.concatenate([arr[:7], arr[-2:]])
+
+def filter_bedroom_comfort_many_days(arr, axis=1):
+    arr_daily_split = np.reshape(arr, (-1, 24))
+    arr_bedroom_comfort_split = np.apply_along_axis(filter_bedroom_comfort_one_day, axis, arr_daily_split)
+    arr_bedroom_comfort = np.concatenate(arr_bedroom_comfort_split).ravel()
+    return arr_bedroom_comfort
+
+def filter_bedroom_comfort_time(arr, axis=2):
+    return np.apply_along_axis(filter_bedroom_comfort_many_days, axis, arr)
+
+
 def create_paths(fdir):
     """Create file paths for the input data from a given file directory.
 
@@ -139,9 +153,9 @@ def create_paths(fdir):
         fdir (str): File directory containing the npy files.
 
     Returns:
-        Tm52InputPaths: Returns a class object containing the required paths.
+        TmInputPaths: Returns a class object containing the required paths.
     """
-    paths = Tm52InputPaths()
+    paths = TmInputPaths()
     paths.fpth_project_info = pathlib.Path(fdir) / 'arr_project_info.npy'
     paths.fpth_aps_info = pathlib.Path(fdir) / 'arr_aps_info.npy'
     paths.fpth_weather_file_info = pathlib.Path(fdir) / 'arr_weather_file_info.npy'
@@ -158,7 +172,7 @@ def fromfile(paths):
     """Obtain input data which is dumped by IES API.
 
     Args:
-        paths (Tm52InputPaths): Created from create_paths function.
+        paths (TmInputPaths): Created from create_paths function.
 
     Returns:
         dict: Contains key value pairs of the dumped data from IES.
@@ -170,7 +184,7 @@ def fromfile(paths):
     for k, fpth in paths.__dict__.items():
         di_input_data[fpth.stem] = np.load(str(fpth))
 
-    input_data = Tm52InputData()
+    input_data = TmInputData()
     input_data.di_project_info = di_input_data["arr_project_info"].item()
     input_data.di_aps_info = di_input_data["arr_aps_info"].item()
     input_data.di_weather_file_info = di_input_data["arr_weather_file_info"].item()

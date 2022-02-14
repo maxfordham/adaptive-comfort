@@ -1,4 +1,4 @@
-class Tm52InputData(object):
+class TmInputData(object):
     di_project_info = None
     di_aps_info = None
     di_weather_file_info = None
@@ -9,7 +9,7 @@ class Tm52InputData(object):
     arr_occupancy = None
     arr_dry_bulb_temp = None
 
-class Tm52InputPaths(object):
+class TmInputPaths(object):
     fpth_project_info = None
     fpth_aps_info = None
     fpth_weather_file_info = None
