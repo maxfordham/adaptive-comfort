@@ -26,7 +26,7 @@ class Tm59CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
-        self.bedrooms(inputs)
+        self.bedroom_ids(inputs)
         self.op_temp(inputs)
         self.max_adaptive_temp(inputs)
         self.deltaT()
@@ -34,12 +34,11 @@ class Tm59CalcWizard:
         # self.merge_dfs(inputs)
         # self.to_excel(inputs, on_linux)
 
-    def bedrooms(self, inputs):
+    def bedroom_ids(self, inputs):
         arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, axis=1)
-        arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
-        ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
+        self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
+        ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
         self.arr_bedroom_ids = ma_arr_bedroom_ids.compressed()
-        print(self.arr_bedroom_ids)
 
     def op_temp(self, inputs):
         """Calculates the operative temperature for each air speed.
@@ -99,6 +98,7 @@ class Tm59CalcWizard:
 
     def run_criterion_two(self):
         # TODO: If op_temp not hourly then convert
+        # TODO: Only obtain arr_op_temp_v for bedroom IDs.
         criterion_bedroom_comfort(self.arr_op_temp_v)
 
     def run_criteria(self, inputs):
