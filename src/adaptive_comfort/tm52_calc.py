@@ -59,8 +59,8 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
-# import sys
-# sys.path.append(str(pathlib.Path(__file__).parents[1]))
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
 # # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
@@ -178,6 +178,9 @@ class Tm52CalcWizard:
         }
 
         # Constructing dictionary of data frames for each air speed.
+        self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
+
         self.di_data_frame_criterion = {}
         for name, criterion in di_criteria.items():
             li_room_criterion = [{
@@ -252,9 +255,6 @@ class Tm52CalcWizard:
             "df": self.create_df_criterion_definitions(),
         }
 
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
-        self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
@@ -293,6 +293,7 @@ class Tm52CalcWizard:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
             output_path = str(fpth_results)
+        print(output_path)
         to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
         print("TM52 Calculation Complete.")
         print("Results File Path: {0}".format(str(fpth_results)))
