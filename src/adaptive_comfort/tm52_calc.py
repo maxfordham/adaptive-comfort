@@ -26,13 +26,13 @@ Process
         Calculate operative temperature for each room that we want to analyse.
         It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
 
-    2. Calculate The Maximum Adaptive Temperature
-        Calculate the maximum adaptive temperature for each room that we want to analyse.
+    2. Calculate The Maximum Acceptable Temperature
+        Calculate the maximum acceptable temperature for each room that we want to analyse.
         It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
 
     3. Calculate Delta T
         Calculates changes in temperature for each room between the operative temperature and the maximum
-        adaptive temperature. *Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
+        acceptable temperature. *Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
 
     4. Run through the TM52 criteria
         Criterion one 
@@ -64,14 +64,14 @@ sys.path.append(str(pathlib.Path(__file__).parents[1]))
 # # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
-from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_adaptive_temp
+from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, np_round_half_up
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
     def __init__(self, inputs, on_linux=True):
-        """Calculates the operative temperature, maximum adaptive temperature, and delta T for each air speed
+        """Calculates the operative temperature, maximum acceptable temperature, and delta T for each air speed
         and produces the results in an excel spreadsheet. 
 
         Args:
@@ -79,7 +79,7 @@ class Tm52CalcWizard:
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.op_temp(inputs)
-        self.max_adaptive_temp(inputs)
+        self.max_acceptable_temp(inputs)
         self.deltaT()
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
@@ -97,25 +97,25 @@ class Tm52CalcWizard:
             inputs.arr_mean_radiant_temp
             )
 
-    def max_adaptive_temp(self, inputs):
-        """Calculates the maximum adaptive temperature for each air speed.
+    def max_acceptable_temp(self, inputs):
+        """Calculates the maximum acceptable temperature for each air speed.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
-        self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
-        if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
-            n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
+        self.arr_max_acceptable_temp = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
+        if self.arr_max_acceptable_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max acceptable time step axis does not match operative temp time step then modify.
+            n = int(self.arr_op_temp_v.shape[2]/self.arr_max_acceptable_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
-            self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
+            self.arr_max_acceptable_temp = np.apply_along_axis(f, 2, self.arr_max_acceptable_temp)
 
     def deltaT(self):
         """Calculates the temperature difference between the operative temperature and the maximum
-        adaptive temperature for each air speed.
+        acceptable temperature for each air speed.
         """
-        self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
+        self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_acceptable_temp)
 
     def run_criterion_one(self, arr_occupancy):
         """Convert delta T and occupancy array so the reporting interval is hourly, round the values,
@@ -168,31 +168,58 @@ class Tm52CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
         arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two(inputs.arr_occupancy)
-        arr_criterion_three_bool, arr_criterion_three_percent = self.run_criterion_three()
+        arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
+        arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
         di_criteria = {
             "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
-            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
-            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_percent.round(2)),
+            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_max),
+            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_max),
         }
 
         # Constructing dictionary of data frames for each air speed.
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
-        self.di_data_frame_criterion = {}
-        for name, criterion in di_criteria.items():
-            li_room_criterion = [{
-                "Room Name": self.arr_sorted_room_names, 
-                "{0} (Pass/Fail)".format(name): arr_room[0],
-                "{0} Percentage (%)".format(name): arr_room[1],
-                } for arr_room in criterion]
-            di_data_frames_criterion = {
-                speed: pd.DataFrame(data, columns=["Room Name", "{0} Percentage (%)".format(name), "{0} (Pass/Fail)".format(name)]) 
-                    for speed, data in zip(self.li_air_speeds_str, li_room_criterion)
-                }
-            self.di_data_frame_criterion[name] = di_data_frames_criterion
+        # TODO: Code below can be placed into a loop where parameters can be defined.
+        self.di_data_frames_criteria = {}
+
+        name = "Criterion 1"
+        criterion_one_value_col_name = "{0} (% Hours Delta T >= 1K)".format(name)
+        li_room_criterion_one = [{
+            "Room Name": self.arr_sorted_room_names, 
+            "{0} (Pass/Fail)".format(name): arr_room[0],
+            criterion_one_value_col_name: arr_room[1],
+            } for arr_room in di_criteria["Criterion 1"]]
+        self.di_data_frames_criteria[name] = {
+            speed: pd.DataFrame(data, columns=["Room Name", criterion_one_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_one)
+            }
+
+        name = "Criterion 2"
+        criterion_two_value_col_name = "{0} (Max Daily Deg. Hours)".format(name)
+        li_room_criterion_two = [{
+            "Room Name": self.arr_sorted_room_names, 
+            "{0} (Pass/Fail)".format(name): arr_room[0],
+            criterion_two_value_col_name: arr_room[1],
+            } for arr_room in di_criteria["Criterion 2"]]
+        self.di_data_frames_criteria[name] = {
+            speed: pd.DataFrame(data, columns=["Room Name", criterion_two_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_two)
+            }
+
+        name = "Criterion 3"
+        criterion_three_value_col_name = "{0} (Max Delta T)".format(name)
+        li_room_criterion_three = [{
+            "Room Name": self.arr_sorted_room_names, 
+            "{0} (Pass/Fail)".format(name): arr_room[0],
+            criterion_three_value_col_name: arr_room[1],
+            } for arr_room in di_criteria["Criterion 3"]]
+        self.di_data_frames_criteria[name] = {
+            speed: pd.DataFrame(data, columns=["Room Name", criterion_three_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_three)
+            }
+
 
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
@@ -257,8 +284,8 @@ class Tm52CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_criteria_one_and_two = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"])
-            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criterion["Criterion 3"][speed], on=["Room Name"])
+            df_criteria_one_and_two = pd.merge(self.di_data_frames_criteria["Criterion 1"][speed], self.di_data_frames_criteria["Criterion 2"][speed], on=["Room Name"])
+            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frames_criteria["Criterion 3"][speed], on=["Room Name"])
 
             # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
             df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
