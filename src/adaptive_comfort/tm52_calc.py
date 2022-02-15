@@ -287,8 +287,12 @@ class Tm52CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        fdir_tm52 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52"
+        if not fdir_tm52.exists():
+            fdir_tm52.mkdir(parents=True)  # Make directories in project folder if they do not exist
+            
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
-        fpth_results = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52" / file_name
+        fpth_results = fdir_tm52 / file_name
         if on_linux:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
