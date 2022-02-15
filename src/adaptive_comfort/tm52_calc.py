@@ -84,7 +84,6 @@ class Tm52CalcWizard:
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
         self.to_excel(inputs, on_linux)
-
     def op_temp(self, inputs):
         """Calculates the operative temperature for each air speed.
 
@@ -186,12 +185,13 @@ class Tm52CalcWizard:
         name = "Criterion 1"
         criterion_one_value_col_name = "{0} (% Hours Delta T >= 1K)".format(name)
         li_room_criterion_one = [{
-            "Room Name": self.arr_sorted_room_names, 
+            "Room Name": self.arr_sorted_room_names,
+            "Room ID": inputs.arr_room_ids_sorted, 
             "{0} (Pass/Fail)".format(name): arr_room[0],
             criterion_one_value_col_name: arr_room[1],
             } for arr_room in di_criteria["Criterion 1"]]
         self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", criterion_one_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_one_value_col_name, "{0} (Pass/Fail)".format(name)]) 
                 for speed, data in zip(self.li_air_speeds_str, li_room_criterion_one)
             }
 
@@ -199,11 +199,12 @@ class Tm52CalcWizard:
         criterion_two_value_col_name = "{0} (Max Daily Deg. Hours)".format(name)
         li_room_criterion_two = [{
             "Room Name": self.arr_sorted_room_names, 
+            "Room ID": inputs.arr_room_ids_sorted, 
             "{0} (Pass/Fail)".format(name): arr_room[0],
             criterion_two_value_col_name: arr_room[1],
             } for arr_room in di_criteria["Criterion 2"]]
         self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", criterion_two_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_two_value_col_name, "{0} (Pass/Fail)".format(name)]) 
                 for speed, data in zip(self.li_air_speeds_str, li_room_criterion_two)
             }
 
@@ -211,11 +212,12 @@ class Tm52CalcWizard:
         criterion_three_value_col_name = "{0} (Max Delta T)".format(name)
         li_room_criterion_three = [{
             "Room Name": self.arr_sorted_room_names, 
+            "Room ID": inputs.arr_room_ids_sorted, 
             "{0} (Pass/Fail)".format(name): arr_room[0],
             criterion_three_value_col_name: arr_room[1],
             } for arr_room in di_criteria["Criterion 3"]]
         self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", criterion_three_value_col_name, "{0} (Pass/Fail)".format(name)]) 
+            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_three_value_col_name, "{0} (Pass/Fail)".format(name)]) 
                 for speed, data in zip(self.li_air_speeds_str, li_room_criterion_three)
             }
 
@@ -283,8 +285,8 @@ class Tm52CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_criteria_one_and_two = pd.merge(self.di_data_frames_criteria["Criterion 1"][speed], self.di_data_frames_criteria["Criterion 2"][speed], on=["Room Name"])
-            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frames_criteria["Criterion 3"][speed], on=["Room Name"])
+            df_criteria_one_and_two = pd.merge(self.di_data_frames_criteria["Criterion 1"][speed], self.di_data_frames_criteria["Criterion 2"][speed], on=["Room Name", "Room ID"])
+            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frames_criteria["Criterion 3"][speed], on=["Room Name", "Room ID"])
 
             # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
             df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)

@@ -29,7 +29,7 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours) to get total hours of exceedance per room
     
     arr_occupancy_bool = arr_occupancy_may_to_sept_hourly > 0  # True where hour has occupancy greater than 0
-    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # sum along time-step axis (hours), i.e. sum hours per room where occupied
+    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axis (hours), i.e. sum hours per room where occupied
 
     arr_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
     arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
