@@ -178,7 +178,7 @@ class Tm52CalcWizard:
         }
 
         # Constructing dictionary of data frames for each air speed.
-        self.di_data_frame_criterion = {}
+        self.di_data_frame_criterion = {}  # TODO: Update with create_df_from_criterion function in utils
         for name, criterion in di_criteria.items():
             li_room_criterion = [{
                 "Room Name": self.arr_sorted_room_names, 

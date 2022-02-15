@@ -30,9 +30,9 @@ def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_occupancy_bool = arr_occupancy_may_to_sept_incl > 0  # Hours where occupied
     arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # axis 1 is hours
 
-    arr_criterion_one_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
-    arr_criterion_one_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
-    return arr_criterion_one_bool, arr_criterion_one_percent
+    arr_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
+    arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
+    return arr_bool, arr_percent
 
 def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     """Calculates whether a room has exceeded the daily weighted exceedance.
@@ -50,9 +50,9 @@ def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     arr_deltaT_occupied = np.where(arr_occupancy==0, 0, arr_deltaT)  # Sets cells in arr_deltaT to 0 where arr_occupancy is 0. We only want to consider occupied intervals.
     arr_daily_weights = daily_weighted_exceedance(arr_deltaT_occupied)
     arr_daily_weight_bool = arr_daily_weights > 6  # See which days exceed 6
-    arr_criterion_two_bool = arr_daily_weight_bool.sum(axis=2, dtype=bool) # sum the days for each room where exceedance occurs
-    arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
-    return arr_criterion_two_bool, arr_criterion_two_percent
+    arr_bool = arr_daily_weight_bool.sum(axis=2, dtype=bool) # sum the days for each room where exceedance occurs
+    arr_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
+    return arr_bool, arr_percent
 
 def criterion_upper_limit_temperature(arr_deltaT):
     """Checks whether delta T exceeds 4K at any point. K meaning kelvin.
@@ -68,9 +68,9 @@ def criterion_upper_limit_temperature(arr_deltaT):
             Second element contains the percentage of exceedance.
     """
     arr_bool = arr_deltaT > 4  # Boolean array wherever delta T value exceeds 4K
-    arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)  # Sum for each room to see if there is at least one exceedance
-    arr_criterion_three_percent = (arr_bool.sum(axis=2) / arr_deltaT.shape[2]) * 100  # Percentage of number of readings exceeding 4K over total number of readings
-    return arr_criterion_three_bool, arr_criterion_three_percent
+    arr_bool = arr_bool.sum(axis=2, dtype=bool)  # Sum for each room to see if there is at least one exceedance
+    arr_percent = (arr_bool.sum(axis=2) / arr_deltaT.shape[2]) * 100  # Percentage of number of readings exceeding 4K over total number of readings
+    return arr_bool, arr_percent
 
 def criterion_bedroom_comfort(arr_op_temp_v_hourly):
     if arr_op_temp_v_hourly.shape[2] != 8760:
@@ -78,6 +78,6 @@ def criterion_bedroom_comfort(arr_op_temp_v_hourly):
     arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
     arr_bedroom_comfort_exceed_temp_bool = arr_op_temp_v_bedroom_comfort > 26
     arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
-    arr_bedroom_comfort_exceed_hours_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
-    print(arr_bedroom_comfort_exceed_hours_bool)
-
+    arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
+    arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
+    return arr_bool, arr_percent

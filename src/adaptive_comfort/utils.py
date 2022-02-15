@@ -4,6 +4,7 @@ Miscellaneous functions used to support the calculation of TM52 and TM59 scripts
 
 import pathlib
 import numpy as np
+import pandas as pd
 
 from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
 
@@ -196,6 +197,19 @@ def fromfile(paths):
     input_data.arr_dry_bulb_temp = di_input_data["arr_dry_bulb_temp"]
 
     return input_data
+
+
+def create_df_from_criterion(arr_sorted_rooms, li_air_speeds_str, zip_criterion, str_criterion_name):
+    li_room_criterion = [{
+        "Room Name": arr_sorted_rooms, 
+        "{0} (Pass/Fail)".format(str_criterion_name): arr_room[0],
+        "{0} Percentage (%)".format(str_criterion_name): arr_room[1],
+        } for arr_room in zip_criterion]
+    di_data_frames_criterion = {
+        speed: pd.DataFrame(data, columns=["Room Name", "{0} Percentage (%)".format(str_criterion_name), "{0} (Pass/Fail)".format(str_criterion_name)]) 
+            for speed, data in zip(li_air_speeds_str, li_room_criterion)
+        }
+    return di_data_frames_criterion
 
 
 if __name__ == "__main__":

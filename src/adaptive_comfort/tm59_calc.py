@@ -13,7 +13,8 @@ sys.path.append(str(pathlib.Path(__file__).parents[1]))
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_adaptive_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up
+from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
+    create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_bedroom_comfort
 
@@ -23,7 +24,7 @@ class Tm59CalcWizard:
         and produces the results in an excel spreadsheet. 
 
         Args:
-            inputs (Tm52InputData): Class instance containing the required inputs.
+            inputs (Tm59InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.bedroom_ids(inputs)
@@ -31,8 +32,8 @@ class Tm59CalcWizard:
         self.max_adaptive_temp(inputs)
         self.deltaT()
         self.run_criteria(inputs)
-        # self.merge_dfs(inputs)
-        # self.to_excel(inputs, on_linux)
+        self.merge_dfs(inputs)
+        self.to_excel(inputs, on_linux)
 
     def bedroom_ids(self, inputs):
         arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, axis=1)
@@ -44,7 +45,7 @@ class Tm59CalcWizard:
         """Calculates the operative temperature for each air speed.
 
         Args:
-            inputs (Tm52InputData): Class instance containing the required inputs.
+            inputs (Tm59InputData): Class instance containing the required inputs.
         """
         self.arr_op_temp_v = np_calc_op_temp(
             inputs.arr_air_temp,
@@ -56,11 +57,11 @@ class Tm59CalcWizard:
         """Calculates the maximum adaptive temperature for each air speed.
 
         Args:
-            inputs (Tm52InputData): Class instance containing the required inputs.
+            inputs (Tm59InputData): Class instance containing the required inputs.
         """
 
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
-        cat_II_temp = 3  # For TM52 calculation use category 2
+        cat_II_temp = 3  # For TM59 calculation use category 2
         self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
         if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
             n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
@@ -107,16 +108,106 @@ class Tm59CalcWizard:
         else:
             arr_op_temp_v_bedrooms_hourly = arr_op_temp_v_bedrooms
             
-        criterion_bedroom_comfort(arr_op_temp_v_bedrooms_hourly)
+        return criterion_bedroom_comfort(arr_op_temp_v_bedrooms_hourly)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
 
         Args:
-            inputs (Tm52InputData): Class instance containing the required inputs.
+            inputs (Tm59InputData): Class instance containing the required inputs.
         """
         arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
         arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two()
+
+        di_criteria = {
+            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
+            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
+        }
+
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
+        self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
+        self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
+
+        # Constructing dictionary of data frames for each air speed.
+        self.di_data_frame_criterion = {}
+        for name, criterion in di_criteria.items():
+            if name == "Criterion 1":
+                arr_rooms_sorted = self.arr_sorted_room_names
+            else:
+                arr_rooms_sorted = self.arr_sorted_bedroom_names
+            self.di_data_frame_criterion[name] = create_df_from_criterion(
+                arr_rooms_sorted, 
+                self.li_air_speeds_str, 
+                criterion, 
+                name
+            )
+
+    def merge_dfs(self, inputs):
+        """Merge the project information, criterion percentage definitions, and criteria data frames within a list
+        which will then be passed onto the to_excel method.
+
+        Args:
+            inputs (Tm59InputData): Class instance containing the required inputs.
+        """
+        # # Project info
+        # di_project_info = {
+        #     "sheet_name": "Project Information",
+        #     "df": self.create_df_project_info(inputs),
+        # }
+
+        # # Obtaining criterion percentage defintions
+        # di_criterion_defs = {
+        #     "sheet_name": "Criterion % Definitions",
+        #     "df": self.create_df_criterion_definitions(),
+        # }
+
+        # self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
+        self.li_all_criteria_data_frames = []
+        for speed in self.li_air_speeds_str:  # Loop through number of air speeds
+            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"], how="left")
+
+            # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
+            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
+
+            # Map true and false to fail and pass respectively
+            li_columns_to_map = [
+                "Criterion 1 (Pass/Fail)",
+                "Criterion 2 (Pass/Fail)",
+                "TM59 (Pass/Fail)"
+            ]
+            di_bool_map = {True: "Fail", False: "Pass"}
+            for column in li_columns_to_map:
+                df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+
+            di_all_criteria_data_frame = {
+                "sheet_name": "Results, Air Speed {0}".format(speed),
+                "df": df_all_criteria,
+            }
+            self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
+
+    def to_excel(self, inputs, on_linux=True):
+        """Output data frames to excel spreadsheet.
+
+        Args:
+            inputs (Tm59InputData): Class instance containing the required inputs.
+            on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
+        """
+        file_name = "TM59__{0}.xlsx".format(inputs.di_project_info['project_name'])
+        fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59"
+        fpth_results = fdir_tm59 / file_name
+        if on_linux:
+            output_dir = pathlib.Path(fdir_tm59.as_posix().replace("C:/", "/mnt/c/"))
+            if not output_dir.exists():
+                output_dir.mkdir(parents=True)
+            output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
+        else:
+            output_dir = pathlib.Path(str(fdir_tm59))  # TODO: Test this
+            if not output_dir.exists():
+                output_dir.mkdir(parents=True)
+            output_path = str(fpth_results)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
+        print("TM59 Calculation Complete.")
+        print("Results File Path: {0}".format(str(fpth_results)))
 
 
 if __name__ == "__main__":
