@@ -294,10 +294,9 @@ class Tm52CalcWizard:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
             output_path = str(fpth_results)
-        print(output_path)
         to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
         print("TM52 Calculation Complete.")
-        print("Results File Path: {0}".format(str(fpth_results)))
+        print("Results File Path: {0}".format(output_path))
 
 
 if __name__ == "__main__":
