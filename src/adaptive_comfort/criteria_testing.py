@@ -19,17 +19,17 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
         tuple: First element contains boolean values where True means exceedance.
             Second element contains the percentage of exceedance.
     """
-    # Delta T
-    # arr_deltaT_occupied_hourly = np.where(arr_occupancy_hourly==0, 0, arr_deltaT_hourly)
-    arr_deltaT_occupied_hourly = np_round_half_up(arr_deltaT_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
-    arr_deltaT_may_to_sept_incl = arr_deltaT_occupied_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
-    arr_deltaT_bool = arr_deltaT_may_to_sept_incl >= 1  # Find where temperature is greater than 1K.
-    arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours)
+    arr_deltaT_may_to_sept_hourly = arr_deltaT_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
+    arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, may_start_hour:sept_end_hour]  # Obtaining occupancy between May and end of September
 
-    # Occupancy
-    arr_occupancy_may_to_sept_incl = arr_occupancy_hourly[:, may_start_hour:sept_end_hour]  # Obtaining occupancy between May and end of September
-    arr_occupancy_bool = arr_occupancy_may_to_sept_incl > 0  # Hours where occupied
-    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # axis 1 is hours
+    arr_deltaT_occupied_may_to_sept_hourly = np.where(arr_occupancy_may_to_sept_hourly==0, 0, arr_deltaT_may_to_sept_hourly)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
+    arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
+    
+    arr_deltaT_bool = arr_deltaT_occupied_may_to_sept_hourly >= 1  # Find where delta T is greater than or equal to 1K.
+    arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours) to get total hours of exceedance per room
+    
+    arr_occupancy_bool = arr_occupancy_may_to_sept_hourly > 0  # True where hour has occupancy greater than 0
+    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03 # sum along time-step axis (hours), i.e. sum hours per room where occupied
 
     arr_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
     arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
@@ -42,7 +42,8 @@ def criterion_two(arr_deltaT, arr_occupancy):
     *See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
 
     Args:
-        arr_deltaT_daily (numpy.ndarray): Delta T (Operative temperature - Max acceptable temperature)
+        arr_deltaT (numpy.ndarray): Delta T (Operative temperature - Max acceptable temperature)
+        arr_occupancy (numpy.ndarray): Occupancy (Number of people)
 
     Returns:
         tuple: First element contains boolean values where True means exceedance.

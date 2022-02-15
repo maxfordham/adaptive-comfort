@@ -137,7 +137,6 @@ class Tm52CalcWizard:
             arr_deltaT_hourly = self.arr_deltaT
             arr_occupancy_hourly = arr_occupancy
         
-        arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)
         return criterion_one(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self, arr_occupancy):
