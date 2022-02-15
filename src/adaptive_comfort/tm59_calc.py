@@ -97,9 +97,17 @@ class Tm59CalcWizard:
         return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self):
-        # TODO: If op_temp not hourly then convert
-        # TODO: Only obtain arr_op_temp_v for bedroom IDs.
-        criterion_bedroom_comfort(self.arr_op_temp_v)
+        bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
+        arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index
+
+        factor = int(arr_op_temp_v_bedrooms.shape[2]/8760)  # Find factor to convert to hourly time-step array
+        if factor > 1:
+            f = functools.partial(mean_every_n_elements, n=factor)
+            arr_op_temp_v_bedrooms_hourly = np.apply_along_axis(f, 2, arr_op_temp_v_bedrooms)
+        else:
+            arr_op_temp_v_bedrooms_hourly = arr_op_temp_v_bedrooms
+            
+        criterion_bedroom_comfort(arr_op_temp_v_bedrooms_hourly)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
