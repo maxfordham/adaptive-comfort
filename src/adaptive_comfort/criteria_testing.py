@@ -23,8 +23,9 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, may_start_hour:sept_end_hour]  # Obtaining occupancy between May and end of September
 
     arr_deltaT_occupied_may_to_sept_hourly = np.where(arr_occupancy_may_to_sept_hourly==0, 0, arr_deltaT_may_to_sept_hourly)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
-    arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
-    
+    # arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
+    arr_deltaT_occupied_may_to_sept_hourly = arr_deltaT_occupied_may_to_sept_hourly.round()
+
     arr_deltaT_bool = arr_deltaT_occupied_may_to_sept_hourly >= 1  # Find where delta T is greater than or equal to 1K.
     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours) to get total hours of exceedance per room
     
@@ -71,6 +72,7 @@ def criterion_three(arr_deltaT):
             Second element contains the percentage of exceedance.
     """
     arr_deltaT_round = np_round_half_up(arr_deltaT).astype(int)
+    # arr_deltaT_round = arr_deltaT.round()
     arr_bool = arr_deltaT_round > 4  # Boolean array wherever delta T value exceeds 4K
     arr_criterion_three_bool = arr_bool.sum(axis=2, dtype=bool)  # Sum for each room to see if there is at least one exceedance
     # arr_criterion_three_percent = (arr_bool.sum(axis=2) / arr_deltaT_round.shape[2]) * 100  # Percentage of number of readings exceeding 4K over total number of readings

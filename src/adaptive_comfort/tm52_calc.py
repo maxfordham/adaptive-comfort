@@ -9,9 +9,9 @@ The class takes two inputs:
             Project information
             Aps information
             Weather data
-            Room air temperature
-            Room mean radiant temperature
-            Room occupancy
+            Room air temperature ("Air temperature" in IES Vista)
+            Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
+            Room occupancy ("Number of people" in IES Vista)
             Dry bulb temperature
             Room names and IDs
 
@@ -25,6 +25,19 @@ Process
     1. Calculate The Operative Temperature
         Calculate operative temperature for each room that we want to analyse.
         It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+
+        .. math::
+            T_{op} = \\frac{T_{a}\sqrt{10v} + T_{r}}{1 + \sqrt{10v}}
+
+
+        # where 
+        
+        # .. math:: 
+        #     T_{op} 
+        # is the room operative temperature (^\circ C),
+        # T_{a} is the indoor air temperature (^\circ C),
+        # T_{r} is the mean radiant temperature (^\circ C),
+        # and v is the summer (elevated) air speed (m/s)
 
     2. Calculate The Maximum Acceptable Temperature
         Calculate the maximum acceptable temperature for each room that we want to analyse.
@@ -70,7 +83,7 @@ from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
 
 class Tm52CalcWizard:
-    def __init__(self, inputs, on_linux=True):
+    def __init__(self, inputs, fdir_results=None, on_linux=True):
         """Calculates the operative temperature, maximum acceptable temperature, and delta T for each air speed
         and produces the results in an excel spreadsheet. 
 
@@ -83,7 +96,8 @@ class Tm52CalcWizard:
         self.deltaT()
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
-        self.to_excel(inputs, on_linux)
+        self.to_excel(inputs, fdir_results, on_linux)
+
     def op_temp(self, inputs):
         """Calculates the operative temperature for each air speed.
 
@@ -308,14 +322,18 @@ class Tm52CalcWizard:
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
-    def to_excel(self, inputs, on_linux=True):
+    def to_excel(self, inputs, fdir_results, on_linux=True):
         """Output data frames to excel spreadsheet.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
+            fdir_results (Path): Override project path.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
-        fdir_tm52 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52"
+        if fdir_results is None:
+            fdir_tm52 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52"
+        else:
+            fdir_tm52 = fdir_results
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
         fpth_results = fdir_tm52 / file_name
         if on_linux:
