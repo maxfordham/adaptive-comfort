@@ -12,12 +12,12 @@ import os
 import fnmatch
 
 
-def does_drive_exist(letter):
-    '''
-    e.g. does_drive_exist('J')
-    '''
-    import win32file
-    return (win32file.GetLogicalDrives() >> (ord(letter.upper()) - 65) & 1) != 0
+# def does_drive_exist(letter):
+#     '''
+#     e.g. does_drive_exist('J')
+#     '''
+#     import win32file
+#     return (win32file.GetLogicalDrives() >> (ord(letter.upper()) - 65) & 1) != 0
 
 
 def extract_digit(string):

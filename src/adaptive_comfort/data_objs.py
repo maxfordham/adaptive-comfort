@@ -19,3 +19,9 @@ class Tm52InputPaths(object):
     fpth_mean_radiant_temp = None
     fpth_occupancy = None
     fpth_dry_bulb_temp = None
+
+class Tm52ExtraData(object):
+    arr_running_mean_temp = None
+    arr_max_adaptive_temp = None
+    arr_operative_temp = None
+    
