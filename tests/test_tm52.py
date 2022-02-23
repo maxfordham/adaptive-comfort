@@ -15,7 +15,7 @@ from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
 from constants import DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
-    arr_running_mean_temp
+    arr_running_mean_temp, arr_operative_temp
 
 
 class TestCheckResults:
@@ -148,28 +148,35 @@ class TestCheckResults:
         to_excel(data_object=di_to_excel, fpth="test_max_acceptable_temp.xlsx", open=False)
 
     def test_operative_temp(self):
-        ies_results = arr_operative_temp.astype("float64").round(3) 
-        mf_results = self.tm52_calc.arr_op_temp_v[0][0].round(3)
-        abs_change = abs(self.tm52_calc.arr_op_temp_v[0][0].round(3) - arr_operative_temp.astype("float64").round(3))
-        rel_change = (abs_change / abs(arr_operative_temp.astype("float64").round(3))) * 100
-        di = OrderedDict([
-            ("IES Results", ies_results),
-            ("MF Results", mf_results),
-            ("Absolute Change", abs_change),
-            ("Relative Change (%)", rel_change)
-        ])
-        df = pd.DataFrame.from_dict(di)
-        di_to_excel = {
-            "sheet_name": "Operative Temperature, Air Speed 0.1",
-            "df": df,
-        }
-        to_excel(data_object=di_to_excel, fpth="test_operative_temp.xlsx", open=False)
+        di_op_temp = arr_operative_temp.tolist()
+        li_df_concat = []
+        for i, j in enumerate(sorted(di_op_temp.items())):
+            arr_op_temp = j[1]
+            ies_results = arr_op_temp.astype("float64").round(3) 
+            mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
+            abs_change = abs(self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
+            rel_change = (abs_change / abs(arr_op_temp.astype("float64").round(3))) * 100
+            di = OrderedDict([
+                ("IES Results", ies_results),
+                ("MF Results", mf_results),
+                ("Absolute Change", abs_change),
+                ("Relative Change (%)", rel_change),
+            ])
+            df = pd.DataFrame.from_dict(di)
+            df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
+            df[("-", "-")] = np.nan  # Add empty column to split between rooms
+            li_df_concat.append(df)
 
-    def test_criterion_one(self):
-        pass
+        df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
+        df_concat.to_excel(
+            "test_operative_temp.xlsx", 
+            sheet_name="Operative Temp, Air Speed 0.1"
+        )
+
 
 if __name__ == "__main__":
     test_check_results = TestCheckResults()
     # test_check_results.test_all_criteria()
-    test_check_results.test_daily_running_mean_temp()
-    test_check_results.test_max_adaptive_temp()
+    test_check_results.test_operative_temp()
+    # test_check_results.test_daily_running_mean_temp()
+    # test_check_results.test_max_adaptive_temp()
