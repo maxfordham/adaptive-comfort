@@ -116,9 +116,9 @@ class Tm52CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
+        self.arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM52 calculation use category 2
-        self.arr_max_acceptable_temp = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
+        self.arr_max_acceptable_temp = np_calculate_max_acceptable_temp(self.arr_running_mean_temp, cat_II_temp, arr_air_speed)
         if self.arr_max_acceptable_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max acceptable time step axis does not match operative temp time step then modify.
             n = int(self.arr_op_temp_v.shape[2]/self.arr_max_acceptable_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
@@ -184,7 +184,7 @@ class Tm52CalcWizard:
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
         di_criteria = {
-            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
+            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
             "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_max),
             "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_max),
         }

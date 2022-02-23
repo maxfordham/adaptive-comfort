@@ -2,13 +2,16 @@
 
 import pytest
 import numpy as np
+import numpy.ma as ma
 import pandas as pd
+from collections import OrderedDict
 
 import sys; import pathlib
 DIR_MODULE = pathlib.Path(__file__).parents[1] / 'src'
 sys.path.append(str(DIR_MODULE))
 # for dev only
 
+from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
 from constants import DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
@@ -28,31 +31,145 @@ class TestCheckResults:
         # Get IES results
         df_ies_v_0_1 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_1, header=22)
         df_ies_v_0_5 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_5, header=22)
-        criterion_one_absolute_change = df_mf_v_0_1["Criterion 1 (% Hours Delta T >= 1K)"] - df_ies_v_0_1[" Criteria 1 (%Hrs Top-Tmax>=1K)"]
-        criterion_two_absolute_change = df_mf_v_0_1["Criterion 2 (Max Daily Deg. Hours)"] - df_ies_v_0_1[" Criteria 2 (Max. Daily Deg.Hrs)"]
-        criterion_three_absolute_change = df_mf_v_0_1["Criterion 3 (Max Delta T)"] - df_ies_v_0_1[" Criteria 3 (Max. DeltaT)"]
 
-        criterion_one_relative_change = (criterion_one_absolute_change / df_ies_v_0_1[" Criteria 1 (%Hrs Top-Tmax>=1K)"]) * 100
-        criterion_two_relative_change = (criterion_two_absolute_change / df_ies_v_0_1[" Criteria 2 (Max. Daily Deg.Hrs)"]) * 100
-        criterion_three_relative_change = (criterion_three_absolute_change / df_ies_v_0_1[" Criteria 3 (Max. DeltaT)"]) * 100
+        df_critera_cols = df_mf_v_0_1.loc[:, ["Criterion 1 (Pass/Fail)", "Criterion 2 (Pass/Fail)", "Criterion 3 (Pass/Fail)"]]
 
-        print("test")
+        # Mapping mf results to ies results.
+        chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", " 1", ""))
+        chararr_two = np.char.array(np.where(df_mf_v_0_1["Criterion 2 (Pass/Fail)"]=="Fail", "2", ""))
+        chararr_three = np.char.array(np.where(df_mf_v_0_1["Criterion 3 (Pass/Fail)"]=="Fail", "3", ""))
+
+        li_criteria_failing = []
+        for i, j, k in zip(chararr_one, chararr_two, chararr_three):
+            final_str = ""
+            if i:
+                final_str += i            
+
+            if i and j:
+                final_str += " & " + j
+            else:
+                final_str += j
+            
+            if (j and k) or (i and k):
+                final_str += " & " + k
+            else:
+                final_str += k
+
+            li_criteria_failing.append(final_str)
+
+        arr_mf_criteria_failing = np.array(li_criteria_failing)
+        arr_ies_criteria_failing = np.array(df_ies_v_0_1[" Criteria failing"])
+        arr_ies_criteria_failing = np.where(arr_ies_criteria_failing==" -", "", arr_ies_criteria_failing)
+        arr_criteria_failing_bool = arr_mf_criteria_failing == arr_ies_criteria_failing
+
+        di_criteria_failing = OrderedDict([
+                ("Room Name", self.tm52_calc.arr_sorted_room_names),
+                ("IES Results", arr_ies_criteria_failing),
+                ("MF Results", arr_mf_criteria_failing),
+                ("IES v MF", arr_criteria_failing_bool)
+            ])
+
+        df_criterion = pd.DataFrame.from_dict(di_criteria_failing)
+        di_criterion_to_excel = {
+                "sheet_name": "Criteria Failing, Air Speed 0.1",
+                "df": df_criterion,
+            }
+        
+        di_names = {
+            "Criterion 1": {
+                "mf_name": "Criterion 1 (% Hours Delta T >= 1K)",
+                "ies_name": " Criteria 1 (%Hrs Top-Tmax>=1K)",
+            },
+            "Criterion 2": {
+                "mf_name": "Criterion 2 (Max Daily Deg. Hours)",
+                "ies_name": " Criteria 2 (Max. Daily Deg.Hrs)",
+            },
+            "Criterion 3": {
+                "mf_name": "Criterion 3 (Max Delta T)",
+                "ies_name": " Criteria 3 (Max. DeltaT)",
+            },
+        }
+
+        li_criteria_to_excel = [di_criterion_to_excel]
+        for criterion, di_name in di_names.items():
+            criterion_abs_change = df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]]
+            criterion_rel_change = (criterion_abs_change / df_ies_v_0_1[di_name["ies_name"]]) * 100
+            di_criterion = OrderedDict([
+                ("Room Name", self.tm52_calc.arr_sorted_room_names),
+                ("IES Results", df_ies_v_0_1[di_name["ies_name"]]),
+                ("MF Results", df_mf_v_0_1[di_name["mf_name"]]),
+                ("{0} Absolute Change".format(criterion), criterion_abs_change),
+                ("{0} Relative Change (%)".format(criterion), criterion_rel_change)
+            ])
+            df_criterion = pd.DataFrame.from_dict(di_criterion)
+            di_criterion_to_excel = {
+                "sheet_name": "{0}, Air Speed 0.1".format(criterion),
+                "df": df_criterion,
+            }
+            li_criteria_to_excel.append(di_criterion_to_excel)
+        
+        to_excel(data_object=li_criteria_to_excel, fpth="test_all_criteria.xlsx", open=False)
 
     def test_daily_running_mean_temp(self):
-        arr_running_mean_temp_bool = self.tm52_calc.arr_running_mean_temp[0].round(3) == arr_running_mean_temp.astype("float64").round(3)  # Checking against IES
-        print(arr_running_mean_temp_bool)
+        ies_results = arr_running_mean_temp.astype("float64").round(3)
+        mf_results = self.tm52_calc.arr_running_mean_temp.round(3)
+        abs_change = abs(self.tm52_calc.arr_running_mean_temp.round(3) - arr_running_mean_temp.astype("float64").round(3))
+        rel_change = (abs_change / abs(arr_running_mean_temp.astype("float64").round(3))) * 100
+        di = OrderedDict([
+            ("IES Results", ies_results),
+            ("MF Results", mf_results),
+            ("Absolute Change", abs_change),
+            ("Relative Change (%)", rel_change)
+        ])
+        df = pd.DataFrame.from_dict(di)
+        di_to_excel = {
+            "sheet_name": "Running Mean Temperature",
+            "df": df,
+        }
+        to_excel(data_object=di_to_excel, fpth="test_running_mean_temp.xlsx", open=False)
+
 
     def test_max_adaptive_temp(self):
-        arr_max_adaptive_bool = self.tm52_calc.arr_max_acceptable_temp[0].round(3) == arr_max_adaptive_temp.astype("float64").round(3)  # Checking against IES
-        print(arr_max_adaptive_bool)
+        ies_results = arr_max_adaptive_temp.astype("float64").round(3) 
+        mf_results = self.tm52_calc.arr_max_acceptable_temp[0][0].round(3)
+        abs_change = abs(self.tm52_calc.arr_max_acceptable_temp[0][0].round(3) - arr_max_adaptive_temp.astype("float64").round(3))
+        rel_change = (abs_change / abs(arr_max_adaptive_temp.astype("float64").round(3))) * 100
+        di = OrderedDict([
+            ("IES Results", ies_results),
+            ("MF Results", mf_results),
+            ("Absolute Change", abs_change),
+            ("Relative Change (%)", rel_change)
+        ])
+        df = pd.DataFrame.from_dict(di)
+        di_to_excel = {
+            "sheet_name": "Max Acceptable Temperature",
+            "df": df,
+        }
+        to_excel(data_object=di_to_excel, fpth="test_max_acceptable_temp.xlsx", open=False)
 
     def test_operative_temp(self):
-        pass
+        ies_results = arr_operative_temp.astype("float64").round(3) 
+        mf_results = self.tm52_calc.arr_op_temp_v[0][0].round(3)
+        abs_change = abs(self.tm52_calc.arr_op_temp_v[0][0].round(3) - arr_operative_temp.astype("float64").round(3))
+        rel_change = (abs_change / abs(arr_operative_temp.astype("float64").round(3))) * 100
+        di = OrderedDict([
+            ("IES Results", ies_results),
+            ("MF Results", mf_results),
+            ("Absolute Change", abs_change),
+            ("Relative Change (%)", rel_change)
+        ])
+        df = pd.DataFrame.from_dict(di)
+        di_to_excel = {
+            "sheet_name": "Operative Temperature, Air Speed 0.1",
+            "df": df,
+        }
+        to_excel(data_object=di_to_excel, fpth="test_operative_temp.xlsx", open=False)
 
     def test_criterion_one(self):
         pass
 
 if __name__ == "__main__":
-    # TestCheckResults().test_all_criteria()
-    TestCheckResults().test_daily_running_mean_temp()
-    TestCheckResults().test_max_adaptive_temp()
+    test_check_results = TestCheckResults()
+    # test_check_results.test_all_criteria()
+    test_check_results.test_daily_running_mean_temp()
+    test_check_results.test_max_adaptive_temp()
