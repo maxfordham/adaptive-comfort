@@ -26,13 +26,11 @@ class TestCheckResults:
 
     def test_all_criteria(self):
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
-        df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
+        # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 
         # Get IES results
         df_ies_v_0_1 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_1, header=22)
-        df_ies_v_0_5 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_5, header=22)
-
-        df_critera_cols = df_mf_v_0_1.loc[:, ["Criterion 1 (Pass/Fail)", "Criterion 2 (Pass/Fail)", "Criterion 3 (Pass/Fail)"]]
+        # df_ies_v_0_5 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_5, header=22)
 
         # Mapping mf results to ies results.
         chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", " 1", ""))
@@ -146,6 +144,7 @@ class TestCheckResults:
             "df": df,
         }
         to_excel(data_object=di_to_excel, fpth="test_max_acceptable_temp.xlsx", open=False)
+
 
     def test_operative_temp(self):
         di_op_temp = arr_operative_temp.tolist()
