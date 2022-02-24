@@ -29,18 +29,15 @@ Process
         .. math::
             T_{op} = \\frac{T_{a}\sqrt{10v} + T_{r}}{1 + \sqrt{10v}}
 
-
-        # where 
-        
-        # .. math:: 
-        #     T_{op} 
-        # is the room operative temperature (^\circ C),
-        # T_{a} is the indoor air temperature (^\circ C),
-        # T_{r} is the mean radiant temperature (^\circ C),
-        # and v is the summer (elevated) air speed (m/s)
+        where $T_{op}$ is the room operative temperature ($^\circ C$),
+        $T_{a}$ is the indoor air temperature ($^\circ C$),
+        $T_{r}$ is the mean radiant temperature ($^\circ C$),
+        and $v$ is the summer (elevated) air speed ($m/s$)
 
     2. Calculate The Maximum Acceptable Temperature
         Calculate the maximum acceptable temperature for each room that we want to analyse.
+        
+
         It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
 
     3. Calculate Delta T
