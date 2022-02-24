@@ -18,6 +18,28 @@ from .constants import DIR_TESTS, DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IE
     arr_running_mean_temp, arr_operative_temp
 
 
+def read_ies_txt(fpth):
+    with open(str(fpth), errors="ignore") as f:
+        lines = f.read()
+    li_txt = lines.split('\n')
+    header = [l.split(', ') for l in li_txt if l[0:4] =='Room' ][0]
+    data = [l.split(', ') for l in li_txt if l[0:2] == "A_"]
+    for d in data:
+        d[6] = d[6].replace('-,', '')  # Remove dashes
+    data = [d for d in data if "Corridor" not in d[0] and "Lobby" not in d[0]]
+    df = pd.DataFrame(columns=header, data=data)
+    number_cols = [
+        'Occupied days (%)',
+        'Criteria 1 (%Hrs Top-Tmax>=1K)',
+        'Criteria 2 (Max. Daily Deg.Hrs)',
+        'Criteria 3 (Max. DeltaT)',
+    ]
+    df[number_cols] = df[number_cols].apply(pd.to_numeric)
+    df = df.sort_values(by=['Room ID'])
+    df = df.reset_index(drop=True)
+    return df
+
+
 class TestCheckResults:
     @classmethod
     def setup_class(cls):
@@ -33,11 +55,11 @@ class TestCheckResults:
         # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 
         # Get IES results
-        df_ies_v_0_1 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_1, header=22)
+        df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
         # df_ies_v_0_5 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_5, header=22)
 
         # Mapping mf results to ies results.
-        chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", " 1", ""))
+        chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", "1", ""))
         chararr_two = np.char.array(np.where(df_mf_v_0_1["Criterion 2 (Pass/Fail)"]=="Fail", "2", ""))
         chararr_three = np.char.array(np.where(df_mf_v_0_1["Criterion 3 (Pass/Fail)"]=="Fail", "3", ""))
 
@@ -60,7 +82,7 @@ class TestCheckResults:
             li_criteria_failing.append(final_str)
 
         arr_mf_criteria_failing = np.array(li_criteria_failing)
-        arr_ies_criteria_failing = np.array(df_ies_v_0_1[" Criteria failing"])
+        arr_ies_criteria_failing = np.array(df_ies_v_0_1["Criteria failing"])
         arr_ies_criteria_failing = np.where(arr_ies_criteria_failing==" -", "", arr_ies_criteria_failing)
         arr_criteria_failing_bool = arr_mf_criteria_failing == arr_ies_criteria_failing
 
@@ -80,15 +102,15 @@ class TestCheckResults:
         di_names = {
             "Criterion 1": {
                 "mf_name": "Criterion 1 (% Hours Delta T >= 1K)",
-                "ies_name": " Criteria 1 (%Hrs Top-Tmax>=1K)",
+                "ies_name": "Criteria 1 (%Hrs Top-Tmax>=1K)",
             },
             "Criterion 2": {
                 "mf_name": "Criterion 2 (Max Daily Deg. Hours)",
-                "ies_name": " Criteria 2 (Max. Daily Deg.Hrs)",
+                "ies_name": "Criteria 2 (Max. Daily Deg.Hrs)",
             },
             "Criterion 3": {
                 "mf_name": "Criterion 3 (Max Delta T)",
-                "ies_name": " Criteria 3 (Max. DeltaT)",
+                "ies_name": "Criteria 3 (Max. DeltaT)",
             },
         }
 
@@ -206,6 +228,7 @@ class TestCheckResults:
 
 
 if __name__ == "__main__":
+    df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
     test_check_results = TestCheckResults()
     test_check_results.test_all_criteria()
     test_check_results.test_operative_temp()
