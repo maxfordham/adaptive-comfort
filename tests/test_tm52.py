@@ -14,17 +14,21 @@ sys.path.append(str(DIR_MODULE))
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
-from constants import DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
+from .constants import DIR_TESTS, DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
     arr_running_mean_temp, arr_operative_temp
 
 
 class TestCheckResults:
-    def __init__(self):
+    @classmethod
+    def setup_class(cls):
         paths = create_paths(DIR_TESTJOB1)
         tm52_input_data = fromfile(paths)
-        self.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1)
+        cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1)
 
     def test_all_criteria(self):
+        """Tests to make sure criteria failing in both IES and MF script match. Also checks the margin of error using
+        the absolute change and relative change. Outputs excels spreadsheet to view the data.
+        """
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
         # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 
@@ -88,10 +92,15 @@ class TestCheckResults:
             },
         }
 
+        li_criterion_abs_change = []
+        li_criterion_rel_change = []
         li_criteria_to_excel = [di_criterion_to_excel]
         for criterion, di_name in di_names.items():
-            criterion_abs_change = df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]]
-            criterion_rel_change = (criterion_abs_change / df_ies_v_0_1[di_name["ies_name"]]) * 100
+            criterion_abs_change = abs(df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]])
+            criterion_rel_change = (criterion_abs_change / abs(df_ies_v_0_1[di_name["ies_name"]])) * 100            
+            li_criterion_abs_change.append(criterion_abs_change)
+            li_criterion_rel_change.append(criterion_rel_change)
+
             di_criterion = OrderedDict([
                 ("Room Name", self.tm52_calc.arr_sorted_room_names),
                 ("IES Results", df_ies_v_0_1[di_name["ies_name"]]),
@@ -105,10 +114,20 @@ class TestCheckResults:
                 "df": df_criterion,
             }
             li_criteria_to_excel.append(di_criterion_to_excel)
-        
-        to_excel(data_object=li_criteria_to_excel, fpth="test_all_criteria.xlsx", open=False)
+
+        arr_criterion_abs_change = np.vstack((li_criterion_abs_change[0], li_criterion_abs_change[1], li_criterion_abs_change[2]))
+        arr_criterion_rel_change = np.vstack((li_criterion_rel_change[0], li_criterion_rel_change[1], li_criterion_rel_change[2]))
+        arr_criterion_abs_change = np.where(np.isfinite(arr_criterion_abs_change), arr_criterion_abs_change, 0)  # Set nans to 0
+        arr_criterion_rel_change = np.where(np.isfinite(arr_criterion_rel_change), arr_criterion_rel_change, 0) 
+
+        to_excel(data_object=li_criteria_to_excel, fpth=str(DIR_TESTS / "test_all_criteria.xlsx"), open=False)
+        assert arr_criteria_failing_bool.sum(dtype=bool) == True  # Do criteria failing match?
+        assert (arr_criterion_abs_change <= 1).sum(dtype=bool) == True  # Does the absolute difference for all criteria have a value less than or equal to 1?
+        assert (arr_criterion_rel_change < 5).sum(dtype=bool) == True  # Does the relative difference for all criteria have a margin of error less than 5%?
 
     def test_daily_running_mean_temp(self):
+        """Compares the daily running mean temperature from IES with the one calculated within the MF script.
+        """
         ies_results = arr_running_mean_temp.astype("float64").round(3)
         mf_results = self.tm52_calc.arr_running_mean_temp.round(3)
         abs_change = abs(self.tm52_calc.arr_running_mean_temp.round(3) - arr_running_mean_temp.astype("float64").round(3))
@@ -124,10 +143,14 @@ class TestCheckResults:
             "sheet_name": "Running Mean Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth="test_running_mean_temp.xlsx", open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTS / "test_running_mean_temp.xlsx"), open=False)
+        assert (abs_change <= 1).sum(dtype=bool)
+        assert (rel_change < 5).sum(dtype=bool)
 
 
     def test_max_adaptive_temp(self):
+        """Compares the maximum-adaptive temperature from IES with the one calculated within the MF script.
+        """
         ies_results = arr_max_adaptive_temp.astype("float64").round(3) 
         mf_results = self.tm52_calc.arr_max_acceptable_temp[0][0].round(3)
         abs_change = abs(self.tm52_calc.arr_max_acceptable_temp[0][0].round(3) - arr_max_adaptive_temp.astype("float64").round(3))
@@ -143,10 +166,15 @@ class TestCheckResults:
             "sheet_name": "Max Acceptable Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth="test_max_acceptable_temp.xlsx", open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTS / "test_max_acceptable_temp.xlsx"), open=False)
+        assert (abs_change <= 1).sum(dtype=bool)
+        assert (rel_change < 5).sum(dtype=bool)
 
 
     def test_operative_temp(self):
+        """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
+        for each room.
+        """
         di_op_temp = arr_operative_temp.tolist()
         li_df_concat = []
         for i, j in enumerate(sorted(di_op_temp.items())):
@@ -168,14 +196,18 @@ class TestCheckResults:
 
         df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
         df_concat.to_excel(
-            "test_operative_temp.xlsx", 
+            str(DIR_TESTS / "test_operative_temp.xlsx"), 
             sheet_name="Operative Temp, Air Speed 0.1"
         )
+        abs_change = abs(self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        rel_change = abs_change / abs(np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        assert (abs_change <= 1).sum(dtype=bool)
+        assert (rel_change < 5).sum(dtype=bool)
 
 
 if __name__ == "__main__":
     test_check_results = TestCheckResults()
-    # test_check_results.test_all_criteria()
+    test_check_results.test_all_criteria()
     test_check_results.test_operative_temp()
-    # test_check_results.test_daily_running_mean_temp()
-    # test_check_results.test_max_adaptive_temp()
+    test_check_results.test_daily_running_mean_temp()
+    test_check_results.test_max_adaptive_temp()
