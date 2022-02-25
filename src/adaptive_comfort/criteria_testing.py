@@ -1,6 +1,6 @@
 import numpy as np
 
-from adaptive_comfort.constants import may_start_hour, sept_end_hour
+from adaptive_comfort.constants import MAY_START_HOUR, SEPT_END_HOUR
 from adaptive_comfort.utils import np_round_half_up
 from adaptive_comfort.equations import daily_weighted_exceedance
 
@@ -19,8 +19,8 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
         tuple: First element contains boolean values where True means exceedance.
             Second element contains the percentage of exceedance.
     """
-    arr_deltaT_may_to_sept_hourly = arr_deltaT_hourly[:, :, may_start_hour:sept_end_hour]  # Obtaining deltaT between May and end of September
-    arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, may_start_hour:sept_end_hour]  # Obtaining occupancy between May and end of September
+    arr_deltaT_may_to_sept_hourly = arr_deltaT_hourly[:, :, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining deltaT between May and end of September
+    arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining occupancy between May and end of September
 
     arr_deltaT_occupied_may_to_sept_hourly = np.where(arr_occupancy_may_to_sept_hourly==0, 0, arr_deltaT_may_to_sept_hourly)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
     # arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
