@@ -4,10 +4,12 @@
 
 The process of how the script obtains the report:
 
-```mermaid
+```{mermaid}
 flowchart TD
-    A[Obtain weather and room data from IES API] --> B[Calculate Operative Temperature, Maximum Acceptable Temperature, and delta Ts] --> C[Calculate TM52 Criteria for each room] --> D[Output report to excel]
+    A[Obtain weather and room data from IES API] --> B[Calculate Operative Temperature, Maximum Acceptable<br> Temperature, and delta Ts] --> C[Calculate TM52 Criteria for each room] --> D[Output report to excel]
 ```
+
+Link to code here: {doc}`api`
 
 ## Mathematics
 ### Calculate The Operative Temperature
@@ -34,7 +36,7 @@ $$
 T_{rm} = (1 - \alpha) T_{od-1} + \alpha T_{rm-1} 
 $$
 
-where $T_{rm} is the daily running mean temperature for that day,
+where $T_{rm}$ is the daily running mean temperature for that day,
 
 $T_{od-1}$ is the daily mean dry-bulb temperatures for yesterday,
 
@@ -82,7 +84,9 @@ and $\Delta T_{v}$ is the additional cooling applied depending on the the elevat
 
 *Reference: See CIBSE TM52: 2013, Page 13, Equation 8, Section 6.1.2*
 
-Note that the CIBSE guidance doesn't add the $\Delta T_{v}$ explicitely into the equation.
+```{note} 
+The CIBSE guidance doesn't add the $\Delta T_{v}$ explicitely into the equation.
+```
 
 Building category table we use for $T_{cat}$:
 
@@ -101,7 +105,7 @@ $$
 *Reference: See CIBSE TM52: 2013, Page 5, Equation 1, Section 3.2.2*
 
 
-### Calculate Delta T
+### Calculate $ \Delta T $
 Calculates changes in temperature for each room and for each air speed between the operative temperature and the maximum acceptable temperature.
 
 $$
@@ -119,19 +123,19 @@ $\Delta T$ is rounded to the nearest whole dregree (i.e. for $\Delta T$ between 
 *Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
 
 ### Run through the TM52 criteria
-1. Criterion one 
+1. *Criterion 1* 
    
     No room can have $\Delta T$ equal or excede the threshold $(1K)$ during occupied hours for more than 3% of the total occupied hours. 
     
     *Reference: See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
 
-2. Criterion two
+2. *Criterion 2*
    
     No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals within occupied hours. 
     
     *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
 
-3. Criterion three 
+3. *Criterion 3* 
    
     No room, at any point, can have a reading where $\Delta T$ excedes the threshold $(4K)$. 
     

@@ -4,7 +4,7 @@
 format: jb-book
 root: intro
 chapters:
-- file: markdown
-- file: notebooks
-- file: calculation
-- file: api
+- file: calculation.md
+- file: tests.ipynb
+- file: notebooks.ipynb
+- file: api.rst

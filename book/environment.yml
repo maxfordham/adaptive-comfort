@@ -15,6 +15,7 @@ dependencies:
   - nodejs
   - pyyaml
   - pytest
+  - openpyxl
   - jupyter-book # for docs
   - sphinx # for docs
   - sphinx-book-theme # for docs

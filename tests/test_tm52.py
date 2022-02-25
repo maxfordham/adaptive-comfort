@@ -219,7 +219,8 @@ class TestCheckResults:
         df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
         df_concat.to_excel(
             str(DIR_TESTS / "test_operative_temp.xlsx"), 
-            sheet_name="Operative Temp, Air Speed 0.1"
+            sheet_name="Operative Temp, Air Speed 0.1", 
+            index=False
         )
         abs_change = abs(self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
         rel_change = abs_change / abs(np.array([j for i, j in sorted(di_op_temp.items())]).round(3))

@@ -1,17 +1,8 @@
-# Welcome to your Jupyter Book
+# Welcome to Adaptive Comfort!
 
+This package allows us to assess IES building projects to make sure that the rooms pass the necessary CIBSE criteria.
 
-This is a small sample book to give you a feel for how book content is
-structured.
+The package contains CIBSE's TM52 and TM59 calculations:
 
-:::{note}
-Here is a note!
-:::
+{doc}`calculation`
 
-And here is a code block:
-
-```
-e = mc^2
-```
-
-Check out the content pages bundled with this sample book to see more.
