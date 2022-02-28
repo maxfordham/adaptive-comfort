@@ -6,5 +6,4 @@ root: intro
 chapters:
 - file: calculation.md
 - file: tests.ipynb
-- file: notebooks.ipynb
 - file: api.rst
