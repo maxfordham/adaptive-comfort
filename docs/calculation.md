@@ -35,7 +35,9 @@ and $\alpha$ is a constant $( \alpha < 1 )$.
 
 *Reference: See {cite}`tm52_report`: Page 7, Equation 2.2, Box 2*
 
-If an extensive run of days is not available then calculate an approximate starting mean temperature from the last seven days. *Refererence: BS EN 15251 (BSI, 2007)*
+If an extensive run of days is not available then calculate an approximate starting mean temperature from the last seven days. 
+
+*Reference: {cite}`bs_en_15251`*
 
 The start-off value is calcuated with $\alpha = 0.8$:
 
