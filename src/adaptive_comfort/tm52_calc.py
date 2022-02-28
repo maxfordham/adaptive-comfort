@@ -268,8 +268,8 @@ class Tm52CalcWizard:
         """
         di_criterion_defs = {
             "Criterion 1 Percentage": ["The number of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
-            "Criterion 2 Percentage": ["The number of days exceeding the daily weight of 6 over the total days per year."],
-            "Criterion 3 Percentage": ["The number of readings where delta T excedes the threshold (4 kelvin) over the total number of readings."],
+            "Criterion 2 Percentage": ["The maximum daily weight taken from the year."],
+            "Criterion 3 Percentage": ["The maximum delta T taken from the year."],
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
