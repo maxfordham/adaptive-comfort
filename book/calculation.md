@@ -5,9 +5,17 @@
 The process of how the script obtains the report:
 
 ```{mermaid}
-flowchart TD
-    A[Obtain weather and room data from IES API] --> B[Calculate Operative Temperature, Maximum Acceptable<br> Temperature, and delta Ts] --> C[Calculate TM52 Criteria for each room] --> D[Output report to excel]
+    flowchart TD
+        subgraph P1 [IES]
+            A[Obtain weather and room data from IES API]
+        end
+        subgraph P2 [Adaptive Comfort]
+         B[Calculate Operative Temperature, Maximum Acceptable<br> Temperature, and delta Ts] --> C[Calculate TM52 Criteria for each room] --> D[Output report to excel]
+        end
+    P1 --> P2
 ```
+
+"IES" is another Max Fordham python package that we use to access the IES data necessary to perform the calculations. "Adaptive Comfort" is this package, and it is used to calculate and perform the necessary criteria for both TM52 and TM59.
 
 Link to code here: {doc}`api`
 
