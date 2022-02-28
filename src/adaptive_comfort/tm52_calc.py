@@ -3,20 +3,20 @@ Calculation Procedure:
 
 The calculation is performed using the Tm52CalcWizard class. 
 
-The class takes two inputs:
+The Tm52CalcWizard class takes two inputs:
     inputs:
-        This is a Tm52InputData class instance. The data within the class:
-            Project information
-            Aps information
-            Weather data
-            Room air temperature ("Air temperature" in IES Vista)
-            Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
-            Room occupancy ("Number of people" in IES Vista)
-            Dry bulb temperature
-            Room names and IDs
+        Tm52InputData class instance. Attributes within the class:
+            - Project information
+            - Aps information
+            - Weather data
+            - Room air temperature ("Air temperature" in IES Vista)
+            - Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
+            - Room occupancy ("Number of people" in IES Vista)
+            - Dry bulb temperature
+            - Room names and IDs
 
-    on_linux: 
-        Boolean value based on whether the output path for the results needs to be given in linux or windows.
+        on_linux: 
+            Boolean value based on whether the output path for the results needs to be given in linux or windows.
 
 Outputs
     An excel spreadsheet containing the results in the project folder.
@@ -24,35 +24,25 @@ Outputs
 Process
     1. Calculate The Operative Temperature
         Calculate operative temperature for each room that we want to analyse.
-        It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
-
-        .. math::
-            T_{op} = \\frac{T_{a}\sqrt{10v} + T_{r}}{1 + \sqrt{10v}}
-
-        where $T_{op}$ is the room operative temperature ($^\circ C$),
-        $T_{a}$ is the indoor air temperature ($^\circ C$),
-        $T_{r}$ is the mean radiant temperature ($^\circ C$),
-        and $v$ is the summer (elevated) air speed ($m/s$)
+        It'll do this for each air speed.
 
     2. Calculate The Maximum Acceptable Temperature
         Calculate the maximum acceptable temperature for each room that we want to analyse.
-        
-
-        It'll do this for each air speed. *Reference: See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+        It'll do this for each air speed. 
 
     3. Calculate Delta T
         Calculates changes in temperature for each room between the operative temperature and the maximum
-        acceptable temperature. *Reference: See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
+        acceptable temperature.
 
     4. Run through the TM52 criteria
         Criterion one 
             No room can have delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
-            total occupied hours. *Reference: See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
+            total occupied hours.
         Criterion two
             No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
-            within occupied hours. *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2b*
+            within occupied hours.
         Criterion three 
-            No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin). *Reference: See CIBSE TM52: 2013, Page 14, Section 6.1.2c*
+            No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin).
 
     5. Merge Data Frames
         Merges the data frames for project information, criterion percentage definitions, and the results for each 
@@ -86,6 +76,7 @@ class Tm52CalcWizard:
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
+            fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.op_temp(inputs)
@@ -180,58 +171,40 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
-        di_criteria = {
-            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
-            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_max),
-            "Criterion 3": zip(arr_criterion_three_bool, arr_criterion_three_max),
-        }
-
         # Constructing dictionary of data frames for each air speed.
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
-        # TODO: Code below can be placed into a loop where parameters can be defined.
+        self.di_criteria = {
+            "Criterion 1": {
+                    "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
+                    "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
+                },
+            "Criterion 2": {
+                "data": zip(arr_criterion_two_bool, arr_criterion_two_max),
+                "value_column": "Criterion 2 (Max Daily Deg. Hours)",
+                },
+            "Criterion 3": {
+                "data": zip(arr_criterion_three_bool, arr_criterion_three_max),
+                "value_column": "Criterion 3 (Max Delta T)",
+            }
+        }
+
         self.di_data_frames_criteria = {}
+        for criterion, di_values in self.di_criteria.items():
+            criterion_pass_fail_col = "{0} (Pass/Fail)".format(criterion)
 
-        name = "Criterion 1"
-        criterion_one_value_col_name = "{0} (% Hours Delta T >= 1K)".format(name)
-        li_room_criterion_one = [{
-            "Room Name": self.arr_sorted_room_names,
-            "Room ID": inputs.arr_room_ids_sorted, 
-            "{0} (Pass/Fail)".format(name): arr_room[0],
-            criterion_one_value_col_name: arr_room[1],
-            } for arr_room in di_criteria["Criterion 1"]]
-        self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_one_value_col_name, "{0} (Pass/Fail)".format(name)]) 
-                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_one)
-            }
+            li_room_criterion = [{
+                "Room Name": self.arr_sorted_room_names,
+                "Room ID": inputs.arr_room_ids_sorted, 
+                criterion_pass_fail_col: arr_room[0],
+                di_values["value_column"]: arr_room[1],
+            } for arr_room in di_values["data"]]
 
-        name = "Criterion 2"
-        criterion_two_value_col_name = "{0} (Max Daily Deg. Hours)".format(name)
-        li_room_criterion_two = [{
-            "Room Name": self.arr_sorted_room_names, 
-            "Room ID": inputs.arr_room_ids_sorted, 
-            "{0} (Pass/Fail)".format(name): arr_room[0],
-            criterion_two_value_col_name: arr_room[1],
-            } for arr_room in di_criteria["Criterion 2"]]
-        self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_two_value_col_name, "{0} (Pass/Fail)".format(name)]) 
-                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_two)
-            }
-
-        name = "Criterion 3"
-        criterion_three_value_col_name = "{0} (Max Delta T)".format(name)
-        li_room_criterion_three = [{
-            "Room Name": self.arr_sorted_room_names, 
-            "Room ID": inputs.arr_room_ids_sorted, 
-            "{0} (Pass/Fail)".format(name): arr_room[0],
-            criterion_three_value_col_name: arr_room[1],
-            } for arr_room in di_criteria["Criterion 3"]]
-        self.di_data_frames_criteria[name] = {
-            speed: pd.DataFrame(data, columns=["Room Name", "Room ID", criterion_three_value_col_name, "{0} (Pass/Fail)".format(name)]) 
-                for speed, data in zip(self.li_air_speeds_str, li_room_criterion_three)
-            }
-
+            self.di_data_frames_criteria[criterion] = {
+                speed: pd.DataFrame(data, columns=["Room Name", "Room ID", di_values["value_column"], criterion_pass_fail_col]) 
+                    for speed, data in zip(self.li_air_speeds_str, li_room_criterion)
+                }
 
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
@@ -267,9 +240,9 @@ class Tm52CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Criterion 1 Percentage": ["The number of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
-            "Criterion 2 Percentage": ["The maximum daily weight taken from the year."],
-            "Criterion 3 Percentage": ["The maximum delta T taken from the year."],
+            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
+            self.di_criteria["Criterion 2"]["value_column"]: ["The maximum daily weight taken from the year."],
+            self.di_criteria["Criterion 3"]["value_column"]: ["The maximum delta T taken from the year."],
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
