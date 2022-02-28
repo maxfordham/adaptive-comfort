@@ -1,10 +1,33 @@
+\DeclareFieldFormat
+  [article,
+   inbook,
+   incollection,
+   inproceedings,
+   patent,
+   thesis, % also phdthesis
+   unpublished,
+   report, % also techreport
+   misc,
+  ]{title}{\href{\thefield{url}}{#1}}
+
 @techreport{tm52_report,
 	title       = "{CIBSE} {TM52} - {The} limits of thermal comfort: avoiding overheating in {European} buildings",
 	author      = "N., Fergus and S., Brian",
 	institution = "The Chartered Insitution of Building Services Engineers London",
 	address     = "London, U.K.",
 	year        = 2013,
-	month       = jul
+	month       = jul,
+	url 		= "https://wiki.maxfordham.com/pub/Main/ExternalReference838/CIBSE%20TM52_2013.pdf"
+}
+
+@techreport{tm59_report,
+	title       = "{CIBSE} {TM59} - {Design} methodology for the assessment of overheating risk in homes",
+	author      = "B., Cecilia and C., Marguerita and others",
+	institution = "The Chartered Insitution of Building Services Engineers London",
+	address     = "London, U.K.",
+	year        = 2017,
+	month       = apr,
+	url 		= "https://wiki.maxfordham.com/pub/Main/ExternalReference831/CIBSE_TM59_2017.pdf"
 }
 
 @techreport{guide_a_report,
@@ -13,7 +36,8 @@
 	institution = "The Chartered Insitution of Building Services Engineers London",
 	address     = "London, U.K.",
 	year        = 2017,
-	month       = jul
+	month       = jul,
+	url			= "https://wiki.maxfordham.com/pub/Main/ExternalReference993/CIBSE%20Guide%20A.pdf"
 }
 
 @techreport{bs_en_15251,

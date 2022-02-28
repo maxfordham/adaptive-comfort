@@ -62,22 +62,16 @@ and $T_{rm}$ is the daily running mean temperature.
 We then calculate the maximum acceptable temperature:
 
 $$
-T_{max} = T_{comf} + T_{cat} + \Delta T_{v}
+T_{max} = T_{comf} + T_{cat}
 $$
 
 where $T_{max}$ is the maximum acceptable temperature,
 
 $T_{comf}$ is the comfort temperature,
 
-$T_{cat}$ is the temperature depending on the building category (for TM52 this is Category II),
-
-and $\Delta T_{v}$ is the additional cooling applied depending on the the elevated air speed.
+and $T_{cat}$ is the temperature depending on the building category (for TM52 this is Category II),
 
 *Reference: See {cite}`tm52_report`: Page 13, Equation 8, Section 6.1.2*
-
-```{note} 
-The CIBSE guidance doesn't add the $\Delta T_{v}$ explicitely into the equation.
-```
 
 Building category table we use for $T_{cat}$:
 
@@ -87,7 +81,9 @@ Building category table we use for $T_{cat}$:
 | Category II  |                    Normal expectation (for new buildings and renovations)                     |               3                |
 | Category III |                     A moderate expectation (used for existing buildings)                      |               4                |
 
-For $\Delta T_{v}$, we use the following equation:
+The CIBSE TM52 guidance also states we should account for additional cooling if the air speed exceeds $0.1ms^{-1}$.
+
+This additional cooling is defined as $\Delta T_{v}$ and we use the following equation to calculate it:
 
 $$
 \Delta T_{v} = 7 - \frac{50}{4+10 \sqrt{v}}
@@ -95,19 +91,26 @@ $$
 
 *Reference: See {cite}`tm52_report`: Page 5, Equation 1, Section 3.2.2*
 
+This therefore means that the maximum acceptable temperature will now depend on air speed:
+
+$$
+T_{max, v} = T_{max} + \Delta T_{v}
+$$
+
+where $T_{max, v}$ is our new maximum acceptable temperature dependent on velocity.
 
 ### Calculate $ \Delta T $
 Calculates changes in temperature for each room and for each air speed between the operative temperature and the maximum acceptable temperature.
 
 $$
-\Delta T = T_{op} - T_{max}
+\Delta T = T_{op} - T_{max, v}
 $$
 
 where $\Delta T$ is the difference between the actual operative temperature in the room and maximum acceptable temperature,
 
 $T_{op}$ is the operative temperature,
 
-and $T_{max}$ is the maximum acceptable temperature.
+and $T_{max, v}$ is the maximum acceptable temperature.
 
 $\Delta T$ is rounded to the nearest whole dregree (i.e. for $\Delta T$ between $0.5$ and $1.5$ the value used is $1K$; for $1.5$ to $2.5$ the value used is $2K$, etc).
 
@@ -133,5 +136,10 @@ $\Delta T$ is rounded to the nearest whole dregree (i.e. for $\Delta T$ between 
     *Reference: See {cite}`tm52_report`: Page 14, Section 6.1.2c*
 
 
+### Passing the TM52 Criteria
+
+For a space to be successful, it must pass at least two out of the three criterion defined above.
+
 ```{bibliography}
+:filter: docname in docnames
 ```
