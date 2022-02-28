@@ -118,8 +118,8 @@ class TestCheckResults:
         li_criterion_rel_change = []
         li_criteria_to_excel = [di_criterion_to_excel]
         for criterion, di_name in di_names.items():
-            criterion_abs_change = abs(df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]])
-            criterion_rel_change = (criterion_abs_change / abs(df_ies_v_0_1[di_name["ies_name"]])) * 100            
+            criterion_abs_change = (df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]])
+            criterion_rel_change = (criterion_abs_change / (df_ies_v_0_1[di_name["ies_name"]])) * 100            
             li_criterion_abs_change.append(criterion_abs_change)
             li_criterion_rel_change.append(criterion_rel_change)
 
@@ -152,8 +152,8 @@ class TestCheckResults:
         """
         ies_results = arr_running_mean_temp.astype("float64").round(3)
         mf_results = self.tm52_calc.arr_running_mean_temp.round(3)
-        abs_change = abs(self.tm52_calc.arr_running_mean_temp.round(3) - arr_running_mean_temp.astype("float64").round(3))
-        rel_change = (abs_change / abs(arr_running_mean_temp.astype("float64").round(3))) * 100
+        abs_change = (self.tm52_calc.arr_running_mean_temp.round(3) - arr_running_mean_temp.astype("float64").round(3))
+        rel_change = (abs_change / (arr_running_mean_temp.astype("float64").round(3))) * 100
         di = OrderedDict([
             ("IES Results", ies_results),
             ("MF Results", mf_results),
@@ -175,8 +175,8 @@ class TestCheckResults:
         """
         ies_results = arr_max_adaptive_temp.astype("float64").round(3) 
         mf_results = self.tm52_calc.arr_max_acceptable_temp[0][0].round(3)
-        abs_change = abs(self.tm52_calc.arr_max_acceptable_temp[0][0].round(3) - arr_max_adaptive_temp.astype("float64").round(3))
-        rel_change = (abs_change / abs(arr_max_adaptive_temp.astype("float64").round(3))) * 100
+        abs_change = (self.tm52_calc.arr_max_acceptable_temp[0][0].round(3) - arr_max_adaptive_temp.astype("float64").round(3))
+        rel_change = (abs_change / (arr_max_adaptive_temp.astype("float64").round(3))) * 100
         di = OrderedDict([
             ("IES Results", ies_results),
             ("MF Results", mf_results),
@@ -203,8 +203,8 @@ class TestCheckResults:
             arr_op_temp = j[1]
             ies_results = arr_op_temp.astype("float64").round(3) 
             mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
-            abs_change = abs(self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
-            rel_change = (abs_change / abs(arr_op_temp.astype("float64").round(3))) * 100
+            abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
+            rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
             di = OrderedDict([
                 ("IES Results", ies_results),
                 ("MF Results", mf_results),
@@ -220,10 +220,9 @@ class TestCheckResults:
         df_concat.to_excel(
             str(DIR_TESTS / "test_operative_temp.xlsx"), 
             sheet_name="Operative Temp, Air Speed 0.1", 
-            index=False
         )
-        abs_change = abs(self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-        rel_change = abs_change / abs(np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
