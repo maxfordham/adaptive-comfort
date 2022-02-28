@@ -20,7 +20,7 @@ The calculation could also be done inpependently of IES, provided that the input
 
 The process of how the script obtains the report:
 
-```{mermaid
+```{mermaid}
     flowchart TD
         subgraph P1 [VEscripts]
             A[export_tm52_results.py<br>Obtain weather and room data from IES API]
