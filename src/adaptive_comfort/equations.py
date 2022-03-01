@@ -2,7 +2,7 @@
 import functools
 import numpy as np
 
-from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_criteria_two
+from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_daily_weighted_exceedance
 
 def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
@@ -183,7 +183,7 @@ def daily_weighted_exceedance(arr_deltaT_occupied):
     Returns:
         numpy.ndarray: The daily weighted exceedance
     """
-    arr_weighting_factors = np_round_for_criteria_two(arr_deltaT_occupied)
+    arr_weighting_factors = np_round_for_daily_weighted_exceedance(arr_deltaT_occupied)
     n = int(arr_weighting_factors.shape[2]/365) 
     f = functools.partial(sum_every_n_elements, n=n)  # We want to sum the intervals so the array represents daily intervals
     time_step = 8760/arr_weighting_factors.shape[2]  # If half hour steps then time_step = 1/2

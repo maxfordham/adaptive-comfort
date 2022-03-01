@@ -67,7 +67,7 @@ from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, np_round_half_up
 from adaptive_comfort.constants import arr_air_speed
-from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
+from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature
 
 class Tm52CalcWizard:
     def __init__(self, inputs, fdir_results=None, on_linux=True):
@@ -138,7 +138,7 @@ class Tm52CalcWizard:
             arr_deltaT_hourly = self.arr_deltaT
             arr_occupancy_hourly = arr_occupancy
         
-        return criterion_one(arr_deltaT_hourly, arr_occupancy_hourly)
+        return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self, arr_occupancy):
         """Runs criterion two.
@@ -150,7 +150,7 @@ class Tm52CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        return criterion_two(self.arr_deltaT, arr_occupancy)
+        return criterion_daily_weighted_exceedance(self.arr_deltaT, arr_occupancy)
 
     def run_criterion_three(self):
         """Runs criterion three.
@@ -159,7 +159,7 @@ class Tm52CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        return criterion_three(self.arr_deltaT)
+        return criterion_upper_limit_temperature(self.arr_deltaT)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.

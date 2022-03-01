@@ -1,11 +1,11 @@
 import numpy as np
 
 from adaptive_comfort.constants import MAY_START_HOUR, SEPT_END_HOUR
-from adaptive_comfort.utils import np_round_half_up
+from adaptive_comfort.utils import np_round_half_up, filter_bedroom_comfort_time
 from adaptive_comfort.equations import daily_weighted_exceedance
 
 
-def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
+def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
     """Calculates whether a room has exceeded the threshold for hours of exceedance. 
     Also calculates the percentage of occupied hours exceeded out of total occupied hours for each room.
 
@@ -36,7 +36,7 @@ def criterion_one(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
     return arr_bool, arr_percent
 
-def criterion_two(arr_deltaT, arr_occupancy):
+def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     """Calculates whether a room has exceeded the daily weighted exceedance.
     Also calculates the percentage of days exceeding daily weight out of the total days.
 
@@ -58,7 +58,7 @@ def criterion_two(arr_deltaT, arr_occupancy):
     arr_max = arr_daily_weights.max(axis=2)
     return arr_criterion_two_bool, arr_max
 
-def criterion_three(arr_deltaT):
+def criterion_upper_limit_temperature(arr_deltaT):
     """Checks whether delta T exceeds 4K at any point. K meaning kelvin.
     Also calculates the percentage of the number of readings exceeding 4K over total number of readings
 
@@ -78,3 +78,14 @@ def criterion_three(arr_deltaT):
     # arr_criterion_three_percent = (arr_bool.sum(axis=2) / arr_deltaT_round.shape[2]) * 100  # Percentage of number of readings exceeding 4K over total number of readings
     arr_max = arr_deltaT_round.max(axis=2)
     return arr_criterion_three_bool, arr_max
+
+
+def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+    if arr_op_temp_v_hourly.shape[2] != 8760:
+        raise ValueError("Reporting intervals are not hourly for the operative temperature.")
+    arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
+    arr_bedroom_comfort_exceed_temp_bool = arr_op_temp_v_bedroom_comfort > 26
+    arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
+    arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
+    arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
+    return arr_bool, arr_percent

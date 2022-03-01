@@ -138,7 +138,7 @@ def filter_bedroom_comfort_one_day(arr):
     return np.concatenate([arr[:7], arr[-2:]])
 
 def filter_bedroom_comfort_many_days(arr, axis=1):
-    arr_daily_split = np.reshape(arr, (-1, 24))
+    arr_daily_split = np.reshape(arr, (-1, 24))  # Split yearly arrays into daily arrays
     arr_bedroom_comfort_split = np.apply_along_axis(filter_bedroom_comfort_one_day, axis, arr_daily_split)
     arr_bedroom_comfort = np.concatenate(arr_bedroom_comfort_split).ravel()
     return arr_bedroom_comfort

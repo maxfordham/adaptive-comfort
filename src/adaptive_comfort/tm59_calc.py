@@ -12,7 +12,7 @@ sys.path.append(str(pathlib.Path(__file__).parents[1]))
 # # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
-from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_adaptive_temp
+from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
     create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
@@ -62,7 +62,7 @@ class Tm59CalcWizard:
 
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
         cat_II_temp = 3  # For TM59 calculation use category 2
-        self.arr_max_adaptive_temp = np_calculate_max_adaptive_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
+        self.arr_max_adaptive_temp = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
         if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
             n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
@@ -166,9 +166,9 @@ class Tm59CalcWizard:
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"], how="left")
 
-            # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
-            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
-
+            # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through criterion 2, so we assume that the room passes.
+            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion 1 (Pass/Fail)", "Criterion 2 (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
+            
             # Map true and false to fail and pass respectively
             li_columns_to_map = [
                 "Criterion 1 (Pass/Fail)",
