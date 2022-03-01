@@ -7,14 +7,17 @@ channels:
   - conda-forge
 #  - http://10.10.30.125:8000
 dependencies:
-  - python=3.6
+  - python
   - numpy
   - pandas
+  - xlsxwriter
+  - markdown
+  - nodejs
+  - pyyaml
+  - pytest
+  - openpyxl
+  - jupyter-book # for docs
   - sphinx # for docs
   - sphinx-book-theme # for docs
-  - autodoc-pydantic # for docs
-  - xlsxwriter
-  - openpyxl
-  - jupyter-book
-  - sphinx-book-theme
-  - myst-parser
+  - sphinx-autoapi
+  - sphinxcontrib-mermaid

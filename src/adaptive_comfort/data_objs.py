@@ -20,5 +20,8 @@ class Tm52InputPaths(object):
     fpth_occupancy = None
     fpth_dry_bulb_temp = None
 
-class Tm59InputData(Tm52InputData):
-    arr_room_ids_vulnerable = None
+class Tm52ExtraData(object):
+    arr_running_mean_temp = None
+    arr_max_adaptive_temp = None
+    arr_operative_temp = None
+    

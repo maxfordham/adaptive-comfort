@@ -2,13 +2,13 @@
 import functools
 import numpy as np
 
-from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_daily_weighted_exceedance
+from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_criteria_two
 
 def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
     Calculates Operative Temperature for Given Conditions
 
-    *See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+    *See CIBSE TM52: 2013, Page 4, Equation 1.2, Box 1*
     
     Args:
         air_temp (float): Indoor Air Temp (C)
@@ -37,13 +37,13 @@ def get_running_mean_temp_startoff(dry_bulb_temp_daily_avg):
     Returns:
         int: returns the running mean temperature startoff value (C)
     """
-    temp_startoff = round(((dry_bulb_temp_daily_avg[-1] 
+    temp_startoff = ((dry_bulb_temp_daily_avg[-1] 
         + dry_bulb_temp_daily_avg[-2]*0.8 
         + dry_bulb_temp_daily_avg[-3]*0.6 
         + dry_bulb_temp_daily_avg[-4]*0.5 
         + dry_bulb_temp_daily_avg[-5]*0.4 
         + dry_bulb_temp_daily_avg[-6]*0.3 
-        + dry_bulb_temp_daily_avg[-7]*0.2)/3.8),200)
+        + dry_bulb_temp_daily_avg[-7]*0.2)/3.8)
     return temp_startoff
 
 
@@ -79,9 +79,6 @@ def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
     for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
         if i == 0:
             pass
-        elif i == 1:
-            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], temp_startoff)
-            li_running_mean_temp_daily.append(running_mean_temp_result)
         else: 
             running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], li_running_mean_temp_daily[i-1])
             li_running_mean_temp_daily.append(running_mean_temp_result)
@@ -142,11 +139,11 @@ def comfort_temp(running_mean_temp):
     return 0.33 * running_mean_temp + 18.8
 
 
-def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
+def calculate_max_acceptable_temp(running_mean_temp, cat_adj, air_speed):
     """
-    Returns Max Adaptive Temperature for a given space.
+    Returns Max Acceptable Temperature for a given space.
     
-    The maximum adaptive temperature is set to be a number of degrees above the comfort 
+    The maximum acceptable temperature is set to be a number of degrees above the comfort 
     temperature, depending on the room category, as defined in *CIBSE TM52:2013, Table 2, 
     Part 4.1.4* Comfort temperature is adjusted at higher air speeds, as defined in 
     *CIBSE TM52:2013, Equation 1, Part 3.2.2*
@@ -157,25 +154,25 @@ def calculate_max_adaptive_temp(running_mean_temp, cat_adj, air_speed):
         air_speed (float): Air Speed in Room (m.s^-1)
     
     Returns: 
-        float: Maximum Adaptive Temperature for given room and air speed (C)
+        float: Maximum Acceptable Temperature for given room and air speed (C)
     """
     return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj 
 
 
-def deltaT(op_temp, max_adaptive_temp):
+def deltaT(op_temp, max_acceptable_temp):
     """Returns the difference between the operative temperature and the
-    max-adaptive temperature.
+    max-acceptable temperature.
     
     *See CIBSE TM52: 2013, Page 13, Equation 9, Section 6.1.2*
 
     Args:
         op_temp (float): Operative temperature
-        max_adaptive_temp (float): Maximum adaptive temperature
+        max_acceptable_temp (float): Maximum acceptable temperature
 
     Returns:
         float: Change in temperature
     """
-    return op_temp - max_adaptive_temp
+    return op_temp - max_acceptable_temp
 
 def daily_weighted_exceedance(arr_deltaT_occupied):
     """Calculates the daily weighted exceedance.
@@ -186,8 +183,8 @@ def daily_weighted_exceedance(arr_deltaT_occupied):
     Returns:
         numpy.ndarray: The daily weighted exceedance
     """
-    arr_weighting_factors = np_round_for_daily_weighted_exceedance(arr_deltaT_occupied)
-    n = int(arr_weighting_factors.shape[2]/365)  # Factor to sum arr_weighting_factors for each
+    arr_weighting_factors = np_round_for_criteria_two(arr_deltaT_occupied)
+    n = int(arr_weighting_factors.shape[2]/365) 
     f = functools.partial(sum_every_n_elements, n=n)  # We want to sum the intervals so the array represents daily intervals
     time_step = 8760/arr_weighting_factors.shape[2]  # If half hour steps then time_step = 1/2
     return time_step * np.apply_along_axis(f, 2, arr_weighting_factors)
@@ -196,5 +193,5 @@ def daily_weighted_exceedance(arr_deltaT_occupied):
 
 np_calc_op_temp = np.vectorize(calc_op_temp)
 
-np_calculate_max_adaptive_temp = np.vectorize(calculate_max_adaptive_temp)
+np_calculate_max_acceptable_temp = np.vectorize(calculate_max_acceptable_temp)
 
