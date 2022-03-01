@@ -42,7 +42,7 @@ Process
             No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
             within occupied hours.
         Criterion three 
-            No room, at any point, can have a reading where delta T excedes the threshold (4 kelvin).
+            No room, at any point, can have a reading where delta T exceeds the threshold (4 kelvin).
 
     5. Merge Data Frames
         Merges the data frames for project information, criterion percentage definitions, and the results for each 
@@ -215,10 +215,15 @@ class Tm52CalcWizard:
         Returns:
             pandas.DataFrame: Data frame of the project information from the IES API.
         """
+        if inputs.di_project_info['project_folder'].find("J:") != -1: # Get job number if J drive is a parent directory
+            job_no = inputs.di_project_info['project_folder'][4:8]  # TODO: Won't work for linux
+        else:
+            job_no = ''
+
         di_project_info = OrderedDict([
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
-            ("Job Number", inputs.di_project_info['project_folder'][4:8]),  # TODO: Review how job number is obtained.
+            ("Job Number", job_no),
             ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
@@ -317,6 +322,6 @@ class Tm52CalcWizard:
 
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1
-    paths = create_paths(DIR_TESTJOB1)
+    paths = create_paths(DIR_TESTJOB1)  # Uses project information stored in numpy files saved
     tm52_input_data = fromfile(paths)
     tm52_calc = Tm52CalcWizard(tm52_input_data)
