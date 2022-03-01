@@ -80,7 +80,7 @@ $T_{comf} = 0.33 T_{rm} + 18.8$ and $T_{cat} = 3$ which gives $T_{max} = 0.33 T_
 
 Building category table we use for $T_{cat}$:
 
-|   Category   |                                          Explanation                                          | $T_{cat}$ (K) |
+|   Category   |                                          Explanation                                          | $T_{cat} (K)$ |
 | :----------: | :-------------------------------------------------------------------------------------------: | :-----------: |
 |  Category I  | High level of expectation only used for spaces occupied by very sensitive and fragile persons |       2       |
 | Category II  |                    Normal expectation (for new buildings and renovations)                     |       3       |
