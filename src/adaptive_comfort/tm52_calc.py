@@ -245,7 +245,7 @@ class Tm52CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or excedes the threshold (1 kelvin) over the total occupied hours."],
+            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
             self.di_criteria["Criterion 2"]["value_column"]: ["The maximum daily weight taken from the year."],
             self.di_criteria["Criterion 3"]["value_column"]: ["The maximum delta T taken from the year."],
         }
