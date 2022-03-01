@@ -65,7 +65,7 @@ sys.path.append(str(pathlib.Path(__file__).parents[1]))
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, np_round_half_up
+from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature
 
@@ -192,19 +192,15 @@ class Tm52CalcWizard:
 
         self.di_data_frames_criteria = {}
         for criterion, di_values in self.di_criteria.items():
-            criterion_pass_fail_col = "{0} (Pass/Fail)".format(criterion)
-
-            li_room_criterion = [{
-                "Room Name": self.arr_sorted_room_names,
-                "Room ID": inputs.arr_room_ids_sorted, 
-                criterion_pass_fail_col: arr_room[0],
-                di_values["value_column"]: arr_room[1],
-            } for arr_room in di_values["data"]]
-
-            self.di_data_frames_criteria[criterion] = {
-                speed: pd.DataFrame(data, columns=["Room Name", "Room ID", di_values["value_column"], criterion_pass_fail_col]) 
-                    for speed, data in zip(self.li_air_speeds_str, li_room_criterion)
-                }
+            self.di_data_frames_criteria[criterion] = create_df_from_criterion(
+                self.arr_sorted_room_names, 
+                inputs.arr_room_ids_sorted,
+                self.li_air_speeds_str, 
+                di_values["data"], 
+                criterion,
+                di_values["value_column"]
+                )
+            
 
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.

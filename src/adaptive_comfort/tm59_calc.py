@@ -128,6 +128,8 @@ class Tm59CalcWizard:
         self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
+        
+
         # Constructing dictionary of data frames for each air speed.
         self.di_data_frame_criterion = {}
         for name, criterion in di_criteria.items():
@@ -141,6 +143,53 @@ class Tm59CalcWizard:
                 criterion, 
                 name
             )
+    
+    def create_df_project_info(self, inputs):
+        """Creates a data frame displaying the project information.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+
+        Returns:
+            pandas.DataFrame: Data frame of the project information from the IES API.
+        """
+        if inputs.di_project_info['project_folder'].find("J:") != -1: # Get job number if J drive is a parent directory
+            job_no = inputs.di_project_info['project_folder'][4:8]  # TODO: Won't work for linux
+        else:
+            job_no = ''
+
+        di_project_info = OrderedDict([
+            ("Type of Analysis", 'CIBSE TM59 Assessment of overheating risk'),
+            ("Weather File", inputs.di_aps_info['weather_file_path']),
+            ("Job Number", job_no),
+            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
+            ("Analysed Air Speeds", self.li_air_speeds_str),
+            ("Weather File Year", str(inputs.di_weather_file_info["year"])),
+            ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),
+            ("Longitude", "{:.2f}".format(inputs.di_weather_file_info['longitude'])),
+            ("Latitude", "{:.2f}".format(inputs.di_weather_file_info['latitude'])),
+            ("Date of Analysis", str(datetime.datetime.now())),
+            ("IES_version", inputs.di_project_info['IES_version'])
+        ])
+
+        df = pd.DataFrame.from_dict(di_project_info, orient='index')
+        df = df.rename(columns={0: "Information"})
+        return df
+
+    def create_df_criterion_definitions(self):
+        """Creates a data frame describing the meaning of the criterion percentage values.
+
+        Returns:
+            pandas.DataFrame: Data frame of the criterion percentage definitions.
+        """
+        di_criterion_defs = {
+            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
+            self.di_criteria["Criterion 2"]["value_column"]: ["The maximum daily weight taken from the year."],
+            self.di_criteria["Criterion 3"]["value_column"]: ["The maximum delta T taken from the year."],
+        }
+        df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
+        df = df.rename(columns={0: "Definition"})
+        return df.sort_index()
 
     def merge_dfs(self, inputs):
         """Merge the project information, criterion percentage definitions, and criteria data frames within a list
@@ -149,17 +198,6 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm59InputData): Class instance containing the required inputs.
         """
-        # # Project info
-        # di_project_info = {
-        #     "sheet_name": "Project Information",
-        #     "df": self.create_df_project_info(inputs),
-        # }
-
-        # # Obtaining criterion percentage defintions
-        # di_criterion_defs = {
-        #     "sheet_name": "Criterion % Definitions",
-        #     "df": self.create_df_criterion_definitions(),
-        # }
 
         # self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         self.li_all_criteria_data_frames = []

@@ -199,14 +199,17 @@ def fromfile(paths):
     return input_data
 
 
-def create_df_from_criterion(arr_sorted_rooms, li_air_speeds_str, zip_criterion, str_criterion_name):
+def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, zip_criterion, str_criterion_name, str_value_col):
+    str_criterion_pass_fail_col = "{0} (Pass/Fail)".format(str_criterion_name)
     li_room_criterion = [{
-        "Room Name": arr_sorted_rooms, 
-        "{0} (Pass/Fail)".format(str_criterion_name): arr_room[0],
-        "{0} Percentage (%)".format(str_criterion_name): arr_room[1],
-        } for arr_room in zip_criterion]
+        "Room Name": arr_sorted_room_names,
+        "Room ID": arr_sorted_room_ids, 
+        str_criterion_pass_fail_col: arr_room[0],
+        str_value_col: arr_room[1],
+    } for arr_room in zip_criterion]
+
     di_data_frames_criterion = {
-        speed: pd.DataFrame(data, columns=["Room Name", "{0} Percentage (%)".format(str_criterion_name), "{0} (Pass/Fail)".format(str_criterion_name)]) 
+        speed: pd.DataFrame(data, columns=["Room Name", "Room ID", str_value_col, str_criterion_pass_fail_col]) 
             for speed, data in zip(li_air_speeds_str, li_room_criterion)
         }
     return di_data_frames_criterion
