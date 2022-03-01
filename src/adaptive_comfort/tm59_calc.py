@@ -119,29 +119,38 @@ class Tm59CalcWizard:
         arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
         arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two()
 
-        di_criteria = {
-            "Criterion 1": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
-            "Criterion 2": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
+        self.di_criteria = {
+            "Criterion 1": {
+                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
+                "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
+                },
+            "Criterion 2": {
+                "data": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(1)),
+                "value_column": "Criterion 2 (% Hours Operative T > 26 Deg. C)",
+                },
         }
 
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
         self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
-        
-
         # Constructing dictionary of data frames for each air speed.
         self.di_data_frame_criterion = {}
-        for name, criterion in di_criteria.items():
-            if name == "Criterion 1":
+        for criterion, di_values in self.di_criteria.items():
+            if criterion == "Criterion 1":
                 arr_rooms_sorted = self.arr_sorted_room_names
+                arr_room_ids_sorted = inputs.arr_room_ids_sorted
             else:
                 arr_rooms_sorted = self.arr_sorted_bedroom_names
-            self.di_data_frame_criterion[name] = create_df_from_criterion(
+                arr_room_ids_sorted = self.arr_bedroom_ids
+
+            self.di_data_frame_criterion[criterion] = create_df_from_criterion(
                 arr_rooms_sorted, 
+                arr_room_ids_sorted,
                 self.li_air_speeds_str, 
-                criterion, 
-                name
+                di_values["data"], 
+                criterion,
+                di_values["value_column"]
             )
     
     def create_df_project_info(self, inputs):
@@ -184,8 +193,7 @@ class Tm59CalcWizard:
         """
         di_criterion_defs = {
             self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
-            self.di_criteria["Criterion 2"]["value_column"]: ["The maximum daily weight taken from the year."],
-            self.di_criteria["Criterion 3"]["value_column"]: ["The maximum delta T taken from the year."],
+            self.di_criteria["Criterion 2"]["value_column"]: ["The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am."],
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
@@ -198,9 +206,19 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm59InputData): Class instance containing the required inputs.
         """
+        # Project info
+        di_project_info = {
+            "sheet_name": "Project Information",
+            "df": self.create_df_project_info(inputs),
+        }
 
-        # self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
-        self.li_all_criteria_data_frames = []
+        # Obtaining criterion percentage defintions
+        di_criterion_defs = {
+            "sheet_name": "Criterion Definitions",
+            "df": self.create_df_criterion_definitions(),
+        }
+
+        self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"], how="left")
 

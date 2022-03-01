@@ -264,7 +264,7 @@ class Tm52CalcWizard:
 
         # Obtaining criterion percentage defintions
         di_criterion_defs = {
-            "sheet_name": "Criterion % Definitions",
+            "sheet_name": "Criterion Definitions",
             "df": self.create_df_criterion_definitions(),
         }
 
