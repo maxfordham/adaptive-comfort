@@ -1,11 +1,11 @@
 # Welcome to Adaptive Comfort!
 
-This package assesses the thermal comfort of a space within a building against the Criterion defined in CIBSE TM52 {cite}`tm52_report` and TM59 {cite}`tm59_report`.  
+This package assesses the thermal comfort of a space within a building against the Criterion defined in CIBSE TM52 {cite}`a-tm52_report` and TM59 {cite}`a-tm59_report`.  
 
 ## Inputs
 - air temperature of the rooms
-- radiant temperature of the rooms
-- wind speed within rooms (as default the calculation is run at every air speed)
+- mean radiant temperature of the rooms
+- elevated air speed within rooms (as default the calculation is run at every air speed)
 - external dry bulb temperature
 - annual occupancy profile
 
@@ -14,7 +14,7 @@ This package assesses the thermal comfort of a space within a building against t
 
 The calculation is done in python; the inputs for this calculation can be extracted from IES using the VEscripts API, as described here: __[MXF_IES_UserGuide_VEScripts_014](https://wiki.maxfordham.com/pub/Main/MXFIESUSERGUIDEVESCRIPTS/MXF_IES_UserGuide_VEScripts_014.pdf)__. 
 
-The calculation could also be done inpependently of IES, provided that the inputs are given in the appropriate format. 
+The calculation could also be done independently of IES, provided that the inputs are given in the appropriate format. 
 
 ## Workflow
 
@@ -31,8 +31,12 @@ The process of how the script obtains the report:
     P1 --> P2
 ```
 
-Once in VEScripts, run export_tm52_results.py. This obtains the data through the IES API and then the adaptive_comfort python package is called to perform the calculations and see whether the spaces pass the criteria. This is then all output into an excel spreadsheet.
+When in the VEScript editor in IES VE, open the script folder and run export_tm52_results.py. This script obtains the data through the IES API and then calls the adaptive_comfort python package to perform the calculations. The calculations will see whether the spaces pass the criteria successfully or not. All this information is then output into an excel spreadsheet.
+
+---
 
 ```{bibliography}
 :filter: docname in docnames
+:labelprefix: A
+:keyprefix: a-
 ```

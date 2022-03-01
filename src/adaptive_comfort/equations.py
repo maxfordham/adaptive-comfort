@@ -8,7 +8,7 @@ def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
     Calculates Operative Temperature for Given Conditions
 
-    *See CIBSE Guide A, Equation 1.2, Part 1.2.2*
+    *See CIBSE TM52: 2013, Page 4, Equation 1.2, Box 1*
     
     Args:
         air_temp (float): Indoor Air Temp (C)
