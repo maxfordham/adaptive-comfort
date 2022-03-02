@@ -160,9 +160,9 @@ def create_paths(fdir):
     paths.fpth_project_info = pathlib.Path(fdir) / 'arr_project_info.npy'
     paths.fpth_aps_info = pathlib.Path(fdir) / 'arr_aps_info.npy'
     paths.fpth_weather_file_info = pathlib.Path(fdir) / 'arr_weather_file_info.npy'
-    paths.fpths_room_ids_sorted = pathlib.Path(fdir) / 'arr_room_ids_sorted.npy'
+    paths.fpth_room_ids_sorted = pathlib.Path(fdir) / 'arr_room_ids_sorted.npy'
     paths.fpth_room_ids_groups = pathlib.Path(fdir) / 'arr_room_ids_groups.npy'
-    paths.fpths_room_id_name_map = pathlib.Path(fdir) / 'arr_room_id_name_map.npy'
+    paths.fpth_room_id_name_map = pathlib.Path(fdir) / 'arr_room_id_name_map.npy'
     paths.fpth_air_temp = pathlib.Path(fdir) / 'arr_air_temp.npy'
     paths.fpth_mean_radiant_temp = pathlib.Path(fdir) / 'arr_mean_radiant_temp.npy'
     paths.fpth_occupancy = pathlib.Path(fdir) / 'arr_occupancy.npy'
@@ -218,7 +218,7 @@ def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_
 
 
 if __name__ == "__main__":
-    from constants import DIR_TESTJOB1
-    paths = create_paths(DIR_TESTJOB1)
+    from constants import DIR_TESTJOB1_TM52
+    paths = create_paths(DIR_TESTJOB1_TM52)
     di_input_data = fromfile(paths)
     print("done")

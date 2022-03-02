@@ -14,7 +14,7 @@ sys.path.append(str(DIR_MODULE))
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
-from .constants import DIR_TESTS, DIR_TESTJOB1, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
+from .constants import DIR_TESTS, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, FPTH_IES_TESTJOB1_V_0_5, arr_max_adaptive_temp, \
     arr_running_mean_temp, arr_operative_temp
 
 
@@ -43,9 +43,9 @@ def read_ies_txt(fpth):
 class TestCheckResults:
     @classmethod
     def setup_class(cls):
-        paths = create_paths(DIR_TESTJOB1)
+        paths = create_paths(DIR_TESTJOB1_TM52)
         tm52_input_data = fromfile(paths)
-        cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1)
+        cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
 
     def test_all_criteria(self):
         """Tests to make sure criteria failing in both IES and MF script match. Also checks the margin of error using

@@ -30,7 +30,7 @@ class Tm59CalcWizard:
         self.bedroom_ids(inputs)
         self.op_temp(inputs)
         self.max_adaptive_temp(inputs)
-        self.deltaT()
+        self.deltaT(inputs)
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
         self.to_excel(inputs, on_linux)
@@ -61,17 +61,39 @@ class Tm59CalcWizard:
         """
 
         arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
-        cat_II_temp = 3  # For TM59 calculation use category 2, for rooms used by vulnerable occupants use category 1
+        cat_I_temp = 2
+        cat_II_temp = 3  
+
+        # For TM59 calculation use category 2, for rooms used by vulnerable occupants use category 1
         self.arr_max_adaptive_temp = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
+        self.arr_max_adaptive_temp_vulnerable = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_I_temp, arr_air_speed)
+
         if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
             n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
             self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
 
-    def deltaT(self):
+    def deltaT(self, inputs):
         """Calculates the temperature difference between the operative temperature and the maximum
         adaptive temperature for each air speed.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
         """
+        # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
+        # is now room specific depending on the group the room belongs to.
+        arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
+
+        # Find indices where room is vulnerable so we can replace the max acceptable temp with correct values.
+        li_vulnerable_idx = []
+        for idx, room_id in enumerate(inputs.arr_room_ids_sorted):
+            if room_id in inputs.di_room_ids_groups["TM59_VulnerableRooms"]:
+                li_vulnerable_idx.append(idx)
+
+        arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
+        arr_max_adaptive_temp[:, [0, 1], :] = np.repeat(self.arr_max_adaptive_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
+
+
         self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
 
     def run_criterion_one(self, arr_occupancy):
@@ -268,7 +290,7 @@ class Tm59CalcWizard:
 
 
 if __name__ == "__main__":
-    from constants import DIR_TESTJOB1
-    paths = create_paths(DIR_TESTJOB1)
+    from constants import DIR_TESTJOB1_TM59
+    paths = create_paths(DIR_TESTJOB1_TM59)
     tm59_input_data = fromfile(paths)
     tm59_calc = Tm59CalcWizard(tm59_input_data)

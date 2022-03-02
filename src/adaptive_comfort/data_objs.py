@@ -14,9 +14,9 @@ class Tm52InputPaths(object):
     fpth_project_info = None
     fpth_aps_info = None
     fpth_weather_file_info = None
-    fpths_room_id_name_map = None
+    fpth_room_id_name_map = None
     fpth_room_ids_groups = None
-    fpths_room_ids_sorted = None
+    fpth_room_ids_sorted = None
     fpth_air_temp = None
     fpth_mean_radiant_temp = None
     fpth_occupancy = None

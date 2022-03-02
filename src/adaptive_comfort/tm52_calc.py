@@ -325,7 +325,7 @@ class Tm52CalcWizard:
 
 
 if __name__ == "__main__":
-    from constants import DIR_TESTJOB1
-    paths = create_paths(DIR_TESTJOB1)  # Uses project information stored in numpy files saved
+    from constants import DIR_TESTJOB1_TM52
+    paths = create_paths(DIR_TESTJOB1_TM52)  # Uses project information stored in numpy files saved
     tm52_input_data = fromfile(paths)
     tm52_calc = Tm52CalcWizard(tm52_input_data)
