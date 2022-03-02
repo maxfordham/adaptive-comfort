@@ -105,7 +105,7 @@ $$
 where $T_{max}$ is our new maximum acceptable temperature dependent on velocity.
 
 ```{attention} 
-The IES TM52 tool does not make this adjustment to the $$T_{max}$$ based on air velocity.
+The IES TM52 tool does not make this adjustment to the $T_{max}$ based on air velocity.
 This means that the MF tool behaves more favourably at higher air speeds, thus given a greater
 benefit to interventions like ceiling fans that increase the air speeds within a room.
 ```
