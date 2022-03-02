@@ -65,9 +65,9 @@ sys.path.append(str(pathlib.Path(__file__).parents[1]))
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, np_round_half_up
+from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
-from adaptive_comfort.criteria_testing import criterion_one, criterion_two, criterion_three
+from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature
 
 class Tm52CalcWizard:
     def __init__(self, inputs, fdir_results=None, on_linux=True):
@@ -138,7 +138,7 @@ class Tm52CalcWizard:
             arr_deltaT_hourly = self.arr_deltaT
             arr_occupancy_hourly = arr_occupancy
         
-        return criterion_one(arr_deltaT_hourly, arr_occupancy_hourly)
+        return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self, arr_occupancy):
         """Runs criterion two.
@@ -150,7 +150,7 @@ class Tm52CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        return criterion_two(self.arr_deltaT, arr_occupancy)
+        return criterion_daily_weighted_exceedance(self.arr_deltaT, arr_occupancy)
 
     def run_criterion_three(self):
         """Runs criterion three.
@@ -159,7 +159,7 @@ class Tm52CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        return criterion_three(self.arr_deltaT)
+        return criterion_upper_limit_temperature(self.arr_deltaT)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
@@ -171,9 +171,17 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
+        # We only consider analysed rooms for TM52
+        li_room_ids_sorted = []
+        for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
+            if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
+                li_room_ids_sorted.append(room_id)
+
+        self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
+
         # Constructing dictionary of data frames for each air speed.
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
 
         self.di_criteria = {
             "Criterion 1": {
@@ -192,19 +200,15 @@ class Tm52CalcWizard:
 
         self.di_data_frames_criteria = {}
         for criterion, di_values in self.di_criteria.items():
-            criterion_pass_fail_col = "{0} (Pass/Fail)".format(criterion)
-
-            li_room_criterion = [{
-                "Room Name": self.arr_sorted_room_names,
-                "Room ID": inputs.arr_room_ids_sorted, 
-                criterion_pass_fail_col: arr_room[0],
-                di_values["value_column"]: arr_room[1],
-            } for arr_room in di_values["data"]]
-
-            self.di_data_frames_criteria[criterion] = {
-                speed: pd.DataFrame(data, columns=["Room Name", "Room ID", di_values["value_column"], criterion_pass_fail_col]) 
-                    for speed, data in zip(self.li_air_speeds_str, li_room_criterion)
-                }
+            self.di_data_frames_criteria[criterion] = create_df_from_criterion(
+                self.arr_sorted_room_names, 
+                self.arr_filtered_room_ids_sorted,
+                self.li_air_speeds_str, 
+                di_values["data"], 
+                criterion,
+                di_values["value_column"]
+                )
+            
 
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
@@ -224,7 +228,7 @@ class Tm52CalcWizard:
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
             ("Job Number", job_no),
-            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
+            ("Analysed Spaces", str(len(self.arr_filtered_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
             ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),
@@ -268,7 +272,7 @@ class Tm52CalcWizard:
 
         # Obtaining criterion percentage defintions
         di_criterion_defs = {
-            "sheet_name": "Criterion % Definitions",
+            "sheet_name": "Criterion Definitions",
             "df": self.create_df_criterion_definitions(),
         }
 
@@ -321,7 +325,7 @@ class Tm52CalcWizard:
 
 
 if __name__ == "__main__":
-    from constants import DIR_TESTJOB1
-    paths = create_paths(DIR_TESTJOB1)  # Uses project information stored in numpy files saved
+    from constants import DIR_TESTJOB1_TM52
+    paths = create_paths(DIR_TESTJOB1_TM52)  # Uses project information stored in numpy files saved
     tm52_input_data = fromfile(paths)
     tm52_calc = Tm52CalcWizard(tm52_input_data)
