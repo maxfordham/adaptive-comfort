@@ -36,6 +36,7 @@ def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
     arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
     return arr_bool, arr_percent
 
+
 def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     """Calculates whether a room has exceeded the daily weighted exceedance.
     Also calculates the percentage of days exceeding daily weight out of the total days.
@@ -57,6 +58,7 @@ def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     # arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
     arr_max = arr_daily_weights.max(axis=2)
     return arr_criterion_two_bool, arr_max
+
 
 def criterion_upper_limit_temperature(arr_deltaT):
     """Checks whether delta T exceeds 4K at any point. K meaning kelvin.
@@ -88,4 +90,17 @@ def criterion_bedroom_comfort(arr_op_temp_v_hourly):
     arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
     arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
     arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
+    return arr_bool, arr_percent
+
+
+def criterion_tm59_mechvent(arr_op_temp_v, arr_occupancy):
+    arr_op_temp_v_occupied = np.where(arr_occupancy==0, 0, arr_op_temp_v)
+    arr_op_temp_exceed_bool = arr_op_temp_v_occupied > 26
+
+    arr_occupancy_bool = arr_occupancy > 0  # True where hour has occupancy greater than 0
+    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axisi.e. sum time per room where occupied
+    
+    arr_bool = arr_op_temp_exceed_bool.sum(axis=2) > arr_occupancy_3_percent
+    arr_percent = (arr_op_temp_exceed_bool.sum(axis=2)/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied time exceeded out of total occupied time
+
     return arr_bool, arr_percent
