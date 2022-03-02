@@ -80,7 +80,6 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        print(inputs.di_room_ids_groups)
         # Find indices where room is vulnerable so we can replace the max acceptable temp with correct values.
         li_vulnerable_idx = []
         for idx, room_id in enumerate(inputs.arr_room_ids_sorted):
@@ -260,7 +259,7 @@ class Tm59CalcWizard:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
             # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
-            df_all_criteria.insert(loc=2, column="For Vulnerable Occupants", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
+            df_all_criteria.insert(loc=2, column="Vulnerable Occupancy", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
