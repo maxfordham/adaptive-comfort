@@ -104,6 +104,12 @@ $$
 
 where $T_{max}$ is our new maximum acceptable temperature dependent on velocity.
 
+```{attention} 
+The IES TM52 tool does not make this adjustment to the $$T_{max}$$ based on air velocity.
+This means that the MF tool behaves more favourably at higher air speeds, thus given a greater
+benefit to interventions like ceiling fans that increase the air speeds within a room.
+```
+
 ### Calculate $ \Delta T $
 $ \Delta T $ calculates changes in temperature for each room and for each air speed between the operative temperature and the maximum acceptable temperature. It is defined as:
 
