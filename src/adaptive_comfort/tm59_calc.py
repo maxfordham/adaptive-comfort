@@ -80,21 +80,22 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
-        # is now room specific depending on the group the room belongs to.
-        arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
-
+        print(inputs.di_room_ids_groups)
         # Find indices where room is vulnerable so we can replace the max acceptable temp with correct values.
         li_vulnerable_idx = []
         for idx, room_id in enumerate(inputs.arr_room_ids_sorted):
             if room_id in inputs.di_room_ids_groups["TM59_VulnerableRooms"]:
                 li_vulnerable_idx.append(idx)
 
-        arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
-        arr_max_adaptive_temp[:, [0, 1], :] = np.repeat(self.arr_max_adaptive_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
+        if li_vulnerable_idx:  # If vulnerable room group assigned to any rooms then edit max_adaptive_temp
+            # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
+            # is now room specific depending on the group the room belongs to.
+            arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
+            arr_max_adaptive_temp[:, li_vulnerable_idx, :] = np.repeat(self.arr_max_adaptive_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
+        else:
+            arr_max_adaptive_temp = self.arr_max_adaptive_temp
 
-
-        self.arr_deltaT = deltaT(self.arr_op_temp_v, self.arr_max_adaptive_temp)
+        self.arr_deltaT = deltaT(self.arr_op_temp_v, arr_max_adaptive_temp)
 
     def run_criterion_one(self, arr_occupancy):
         """Convert delta T and occupancy array so the reporting interval is hourly, round the values,
@@ -257,6 +258,9 @@ class Tm59CalcWizard:
             di_bool_map = {True: "Fail", False: "Pass"}
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+
+            # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
+            df_all_criteria.insert(loc=2, column="For Vulnerable Occupants", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
