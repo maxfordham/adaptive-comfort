@@ -171,9 +171,17 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
+        # We only consider analysed rooms for TM52
+        li_room_ids_sorted = []
+        for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
+            if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
+                li_room_ids_sorted.append(room_id)
+
+        self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
+
         # Constructing dictionary of data frames for each air speed.
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
 
         self.di_criteria = {
             "Criterion 1": {
@@ -194,7 +202,7 @@ class Tm52CalcWizard:
         for criterion, di_values in self.di_criteria.items():
             self.di_data_frames_criteria[criterion] = create_df_from_criterion(
                 self.arr_sorted_room_names, 
-                inputs.arr_room_ids_sorted,
+                self.arr_filtered_room_ids_sorted,
                 self.li_air_speeds_str, 
                 di_values["data"], 
                 criterion,
@@ -220,7 +228,7 @@ class Tm52CalcWizard:
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
             ("Job Number", job_no),
-            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
+            ("Analysed Spaces", str(len(self.arr_filtered_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
             ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),

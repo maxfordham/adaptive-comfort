@@ -161,6 +161,7 @@ def create_paths(fdir):
     paths.fpth_aps_info = pathlib.Path(fdir) / 'arr_aps_info.npy'
     paths.fpth_weather_file_info = pathlib.Path(fdir) / 'arr_weather_file_info.npy'
     paths.fpths_room_ids_sorted = pathlib.Path(fdir) / 'arr_room_ids_sorted.npy'
+    paths.fpth_room_ids_groups = pathlib.Path(fdir) / 'arr_room_ids_groups.npy'
     paths.fpths_room_id_name_map = pathlib.Path(fdir) / 'arr_room_id_name_map.npy'
     paths.fpth_air_temp = pathlib.Path(fdir) / 'arr_air_temp.npy'
     paths.fpth_mean_radiant_temp = pathlib.Path(fdir) / 'arr_mean_radiant_temp.npy'
@@ -190,6 +191,7 @@ def fromfile(paths):
     input_data.di_aps_info = di_input_data["arr_aps_info"].item()
     input_data.di_weather_file_info = di_input_data["arr_weather_file_info"].item()
     input_data.di_room_id_name_map = di_input_data["arr_room_id_name_map"].item()
+    input_data.di_room_ids_groups = di_input_data["arr_room_ids_groups"].item()
     input_data.arr_room_ids_sorted = di_input_data["arr_room_ids_sorted"]
     input_data.arr_air_temp = di_input_data["arr_air_temp"]
     input_data.arr_mean_radiant_temp = di_input_data["arr_mean_radiant_temp"]
