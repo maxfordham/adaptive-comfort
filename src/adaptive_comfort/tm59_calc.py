@@ -57,9 +57,6 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
@@ -353,6 +350,10 @@ class Tm59CalcWizard:
 
 
 if __name__ == "__main__":
+    # import sys
+    # sys.path.append(str(pathlib.Path(__file__).parents[1]))
+    # ^dev import - copy to top when debugging
+
     from constants import DIR_TESTJOB1_TM59
     paths = create_paths(DIR_TESTJOB1_TM59)
     tm59_input_data = fromfile(paths)
