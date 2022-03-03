@@ -11,6 +11,6 @@ MAY_START_HOUR = DT_MAY_START_DAY.days * 24
 SEPT_END_HOUR = DT_SEPT_END_DAY.days * 24
 
 # Test job 1
-DIR_TESTJOB1_TM52 = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm52"
-DIR_TESTJOB1_TM59 = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm59"
-DIR_TESTJOB1_TM59MECHVENT = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm59mechvent"
+DIR_TESTJOB1_TM52 = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm52" / "data"
+DIR_TESTJOB1_TM59 = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm59" / "data"
+DIR_TESTJOB1_TM59MECHVENT = pathlib.Path(__file__).parents[2] / "tests" / "testmodels" / "TestJob1" / "mf_results" / "tm59mechvent" / "data"

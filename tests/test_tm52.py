@@ -51,6 +51,9 @@ class TestCheckResults:
         """Tests to make sure criteria failing in both IES and MF script match. Also checks the margin of error using
         the absolute change and relative change. Outputs excels spreadsheet to view the data.
         """
+        paths = create_paths(DIR_TESTJOB1_TM52)
+        tm52_input_data = fromfile(paths)
+        self.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
         # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 
@@ -105,7 +108,7 @@ class TestCheckResults:
                 "ies_name": "Criteria 1 (%Hrs Top-Tmax>=1K)",
             },
             "Criterion 2": {
-                "mf_name": "Criterion 2 (Max Daily Deg. Hours)",
+                "mf_name": "Criterion 2 (Max Daily Weight)",
                 "ies_name": "Criteria 2 (Max. Daily Deg.Hrs)",
             },
             "Criterion 3": {
@@ -193,38 +196,38 @@ class TestCheckResults:
         assert (rel_change < 5).sum(dtype=bool)
 
 
-    def test_operative_temp(self):
-        """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
-        for each room.
-        """
-        di_op_temp = arr_operative_temp.tolist()
-        li_df_concat = []
-        for i, j in enumerate(sorted(di_op_temp.items())):
-            arr_op_temp = j[1]
-            ies_results = arr_op_temp.astype("float64").round(3) 
-            mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
-            abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
-            rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
-            di = OrderedDict([
-                ("IES Results", ies_results),
-                ("MF Results", mf_results),
-                ("Absolute Change", abs_change),
-                ("Relative Change (%)", rel_change),
-            ])
-            df = pd.DataFrame.from_dict(di)
-            df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
-            df[("-", "-")] = np.nan  # Add empty column to split between rooms
-            li_df_concat.append(df)
+    # def test_operative_temp(self):  # TODO: Test won't work until can obtain operative temperature from IES API again.
+    #     """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
+    #     for each room.
+    #     """
+    #     di_op_temp = arr_operative_temp.tolist()
+    #     li_df_concat = []
+    #     for i, j in enumerate(sorted(di_op_temp.items())):
+    #         arr_op_temp = j[1]
+    #         ies_results = arr_op_temp.astype("float64").round(3) 
+    #         mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
+    #         abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
+    #         rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
+    #         di = OrderedDict([
+    #             ("IES Results", ies_results),
+    #             ("MF Results", mf_results),
+    #             ("Absolute Change", abs_change),
+    #             ("Relative Change (%)", rel_change),
+    #         ])
+    #         df = pd.DataFrame.from_dict(di)
+    #         df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
+    #         df[("-", "-")] = np.nan  # Add empty column to split between rooms
+    #         li_df_concat.append(df)
 
-        df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
-        df_concat.to_excel(
-            str(DIR_TESTDATA / "test_operative_temp.xlsx"), 
-            sheet_name="Operative Temp, Air Speed 0.1", 
-        )
-        abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-        rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-        assert (abs_change <= 1).sum(dtype=bool)
-        assert (rel_change < 5).sum(dtype=bool)
+    #     df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
+    #     df_concat.to_excel(
+    #         str(DIR_TESTDATA / "test_operative_temp.xlsx"), 
+    #         sheet_name="Operative Temp, Air Speed 0.1", 
+    #     )
+    #     abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+    #     rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+    #     assert (abs_change <= 1).sum(dtype=bool)
+    #     assert (rel_change < 5).sum(dtype=bool)
 
 
 if __name__ == "__main__":

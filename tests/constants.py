@@ -2,7 +2,7 @@ import pathlib
 import numpy as np
 
 DIR_TESTS = pathlib.Path(__file__).parent
-DIR_TESTJOB1_TM52 = DIR_TESTS / "testmodels" / "TestJob1" / "mf_results" / "tm52"
+DIR_TESTJOB1_TM52 = DIR_TESTS / "testmodels" / "TestJob1" / "mf_results" / "tm52" / "data"
 DIR_TESTDATA = DIR_TESTS / "testdata"
 FPTH_IES_TESTJOB1_V_0_1 = DIR_TESTDATA / "tm52_vista_pro" / "ies_TestJob1_TM52_0_1.csv" 
 FPTH_IES_TESTJOB1_V_0_5 = DIR_TESTDATA / "tm52_vista_pro" / "ies_TestJob1_TM52_0_5.csv"
