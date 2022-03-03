@@ -215,7 +215,7 @@ class Tm59MechVentCalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
-        file_name = "TM59__MechVent__{0}.xlsx".format(inputs.di_project_info['project_name'])
+        file_name = "TM59MechVent__{0}.xlsx".format(inputs.di_project_info['project_name'])
         fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59mechvent"
         fpth_results = fdir_tm59 / file_name
         if on_linux:
