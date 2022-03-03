@@ -1,5 +1,4 @@
-"""
-Miscellaneous functions used to support the calculation of TM52 and TM59 scripts.
+"""Miscellaneous functions used to support the calculation of TM52 and TM59 scripts.
 """
 
 import pathlib
@@ -135,15 +134,43 @@ def repeat_every_element_n_times(arr, n=24, axis=0):
 
 
 def filter_bedroom_comfort_one_day(arr):
+    """Take an hourly time-step array for a day and returns the hours between 10pm and 7am.
+
+    Args:
+        arr (numpy.ndarray): hourly time-step array for a day
+
+    Returns:
+        numpy.ndarray: hourly time-step array of hours 10pm to 7am
+    """
     return np.concatenate([arr[:7], arr[-2:]])
 
 def filter_bedroom_comfort_many_days(arr, axis=1):
+    """Takes a multiple hourly time-step array for multiple days and returns the hours between 10pm and 7am for each one of those days. 
+    Note: The array must be a length where 24 is a factor of it.
+
+    Args:
+        arr (numpy.ndarray): hourly time-step array for many days
+        axis (int, optional): Axis to apply function over. Defaults to 1.
+
+    Returns:
+        numpy.ndarray: hourly time-step array of hours 10pm to 7am for multiple days
+    """
     arr_daily_split = np.reshape(arr, (-1, 24))  # Split yearly arrays into daily arrays
     arr_bedroom_comfort_split = np.apply_along_axis(filter_bedroom_comfort_one_day, axis, arr_daily_split)
     arr_bedroom_comfort = np.concatenate(arr_bedroom_comfort_split).ravel()
     return arr_bedroom_comfort
 
 def filter_bedroom_comfort_time(arr, axis=2):
+    """Takes a multiple hourly time-step array for multiple days for multiple rooms and returns the hours between 10pm and 7am 
+    for each one of those days for each room. 
+
+    Args:
+        arr (numpy.ndarray): hourly time-step array for many days for multiple rooms
+        axis (int, optional): Axis to apply function over. Defaults to 2.
+
+    Returns:
+        numpy.ndarray: ourly time-step array of hours 10pm to 7am for multiple days for each room
+    """
     return np.apply_along_axis(filter_bedroom_comfort_many_days, axis, arr)
 
 
@@ -202,6 +229,19 @@ def fromfile(paths):
 
 
 def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, zip_criterion, str_criterion_name, str_value_col):
+    """Creates pandas data frame for a criterion.
+
+    Args:
+        arr_sorted_room_names (numpy.ndarray): Sorted room names
+        arr_sorted_room_ids (numpy.ndarray): Sorted room IDs
+        li_air_speeds_str (list): list of air speeds
+        zip_criterion (zip): zip of criterion data
+        str_criterion_name (str): criterion name
+        str_value_col (str): criterion value name
+
+    Returns:
+        dict: dict of data frames for each air speed.
+    """
     str_criterion_pass_fail_col = "{0} (Pass/Fail)".format(str_criterion_name)
     li_room_criterion = [{
         "Room Name": arr_sorted_room_names,

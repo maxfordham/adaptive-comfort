@@ -13,7 +13,7 @@ The Tm52CalcWizard class takes two inputs:
             - Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
             - Room occupancy ("Number of people" in IES Vista)
             - Dry bulb temperature
-            - Room names and IDs
+            - Room names, IDs and groups
 
         on_linux: 
             Boolean value based on whether the output path for the results needs to be given in linux or windows.
@@ -36,7 +36,7 @@ Process
 
     4. Run through the TM52 criteria
         Criterion one 
-            No room can have delta T equal or excede the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
+            No room can have delta T equal or exceed the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
             total occupied hours.
         Criterion two
             No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
@@ -58,10 +58,6 @@ import numpy as np
 import pandas as pd
 import datetime
 from collections import OrderedDict
-
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-# # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp

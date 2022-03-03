@@ -1,4 +1,4 @@
-"""IES calculations referenced from CIBSE guidance."""
+"""IES equations referenced from CIBSE guidance."""
 import functools
 import numpy as np
 

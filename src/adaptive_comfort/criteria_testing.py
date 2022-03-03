@@ -1,3 +1,5 @@
+"""Contains functions that perform all the different criteria that will be used for TM52 and TM59.
+"""
 import numpy as np
 
 from adaptive_comfort.constants import MAY_START_HOUR, SEPT_END_HOUR
@@ -55,7 +57,6 @@ def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     arr_daily_weights = daily_weighted_exceedance(arr_deltaT_occupied)
     arr_daily_weight_bool = arr_daily_weights > 6  # See which days exceed 6
     arr_criterion_two_bool = arr_daily_weight_bool.sum(axis=2, dtype=bool) # sum the days for each room where exceedance occurs
-    # arr_criterion_two_percent = (arr_daily_weight_bool.sum(axis=2) / 365) * 100  # Percentage of days exceeding daily weight out of the total days.
     arr_max = arr_daily_weights.max(axis=2)
     return arr_criterion_two_bool, arr_max
 
@@ -83,6 +84,19 @@ def criterion_upper_limit_temperature(arr_deltaT):
 
 
 def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+    """Guarantee comfort during the sleeping hours. The operative temperature in the bedroom from 10pm to 7am must not exceed 26 degrees celsius
+    for more than 1% of annual hours.
+
+    Args:
+        arr_op_temp_v_hourly (numpy.ndarray): Operative temperatue for each air speed with time-step interval as hourly
+
+    Raises:
+        ValueError: If time-step interval not length 8760 then must not be hourly.
+
+    Returns:
+        tuple: Returns room that failed and passed
+            Percentage where hours exceeded 26 degrees celsius
+    """
     if arr_op_temp_v_hourly.shape[2] != 8760:
         raise ValueError("Reporting intervals are not hourly for the operative temperature.")
     arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
@@ -94,11 +108,23 @@ def criterion_bedroom_comfort(arr_op_temp_v_hourly):
 
 
 def criterion_tm59_mechvent(arr_op_temp_v, arr_occupancy):
-    arr_op_temp_v_occupied = np.where(arr_occupancy==0, 0, arr_op_temp_v)
+    """For homes with restricted window openings, we must follow this CIBSE criterion.
+    All occupied rooms should not exceed an operative temperature of more than 26 degrees celsius for more than
+    3 percent of the annual occupied time.
+
+    Args:
+        arr_op_temp_v (numpy.ndarray): Operative temperatue for each air speed
+        arr_occupancy (numpy.ndarray): Number of people in each room
+
+    Returns:
+        tuple: Returns which rooms failed and passed
+            Also returns the percentage of time where rooms exceeded the threshold
+    """
+    arr_op_temp_v_occupied = np.where(arr_occupancy==0, 0, arr_op_temp_v)  # Want to ignore any temperatures where rooms are unoccupied
     arr_op_temp_exceed_bool = arr_op_temp_v_occupied > 26
 
-    arr_occupancy_bool = arr_occupancy > 0  # True where hour has occupancy greater than 0
-    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axisi.e. sum time per room where occupied
+    arr_occupancy_bool = arr_occupancy > 0  # True where time-step has occupancy greater than 0
+    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axis i.e. sum time per room where occupied
     
     arr_bool = arr_op_temp_exceed_bool.sum(axis=2) > arr_occupancy_3_percent
     arr_percent = (arr_op_temp_exceed_bool.sum(axis=2)/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied time exceeded out of total occupied time

@@ -1,20 +1,54 @@
-import functools
+"""
+Calculation Procedure:
+
+The calculation is performed using the Tm59MechVentCalcWizard class. 
+
+The Tm59MechVentCalcWizard class takes two inputs:
+    inputs:
+        Tm52InputData class instance. Attributes within the class:
+            - Project information
+            - Aps information
+            - Weather data
+            - Room air temperature ("Air temperature" in IES Vista)
+            - Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
+            - Room occupancy ("Number of people" in IES Vista)
+            - Dry bulb temperature
+            - Room names, IDs, and groups
+
+        on_linux: 
+            Boolean value based on whether the output path for the results needs to be given in linux or windows.
+
+Outputs
+    An excel spreadsheet containing the results in the project folder.
+
+Process
+    1. Calculate The Operative Temperature
+        Calculate operative temperature for each room that we want to analyse.
+        It'll do this for each air speed.
+
+    2. Run through the TM59 Mechanically Ventilated criteria
+        Criterion one 
+            No room can have the operative temperature exceed 26 degrees celsius during occupied time for more than 3 percent of the 
+            total annual occupied time.
+
+    3. Merge Data Frames
+        Merges the data frames for project information, criterion percentage definitions, and the results for each 
+        air speed.
+
+    4. Output To Excel
+        Outputs the dataframes to an excel spreadsheet in the project location.
+"""
+
+
 import pathlib
-from re import L
 import numpy as np
-import numpy.ma as ma
 import pandas as pd
 import datetime
 from collections import OrderedDict
 
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-# # for dev only
-
 from adaptive_comfort.xlsx_templater import to_excel
-from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
-    create_df_from_criterion
+from adaptive_comfort.equations import np_calc_op_temp
+from adaptive_comfort.utils import create_paths, fromfile, create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_tm59_mechvent
 
@@ -54,7 +88,6 @@ class Tm59MechVentCalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        # TODO: Are all rooms always occupied?
         return criterion_tm59_mechvent(self.arr_op_temp_v, arr_occupancy)
 
     def run_criteria(self, inputs):
@@ -188,7 +221,7 @@ class Tm59MechVentCalcWizard:
                 output_dir.mkdir(parents=True)
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
-            output_dir = pathlib.Path(str(fdir_tm59))  # TODO: Test this
+            output_dir = pathlib.Path(str(fdir_tm59))
             if not output_dir.exists():
                 output_dir.mkdir(parents=True)
             output_path = str(fpth_results)

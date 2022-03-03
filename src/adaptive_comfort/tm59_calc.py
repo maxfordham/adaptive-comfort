@@ -1,15 +1,61 @@
+"""
+Calculation Procedure:
+
+The calculation is performed using the Tm59CalcWizard class. 
+
+The Tm59CalcWizard class takes two inputs:
+    inputs:
+        Tm52InputData class instance. Attributes within the class:
+            - Project information
+            - Aps information
+            - Weather data
+            - Room air temperature ("Air temperature" in IES Vista)
+            - Room mean radiant temperature ("Mean radiant temperature" in IES Vista)
+            - Room occupancy ("Number of people" in IES Vista)
+            - Dry bulb temperature
+            - Room names, IDs, and groups
+
+        on_linux: 
+            Boolean value based on whether the output path for the results needs to be given in linux or windows.
+
+Outputs
+    An excel spreadsheet containing the results in the project folder.
+
+Process
+    1. Calculate The Operative Temperature
+        Calculate operative temperature for each room that we want to analyse.
+        It'll do this for each air speed.
+
+    2. Calculate The Maximum Acceptable Temperature
+        Calculate the maximum acceptable temperature for each room that we want to analyse.
+        It'll do this for each air speed. 
+
+    3. Calculate Delta T
+        Calculates changes in temperature for each room between the operative temperature and the maximum
+        acceptable temperature.
+
+    4. Run through the TM59 criteria
+        Criterion one 
+            For living rooms, kitchens, and bedrooms: No room can have delta T equal or exceed the threshold (1 kelvin) during occupied hours between May and September inclusive
+            for more than 3 percent of the total occupied hours.
+        Criterion two
+            For bedrooms only: The operative temperature between 10pm and 7am must not exceed 26 degrees celsius for more than 1% of annual hours.
+
+    5. Merge Data Frames
+        Merges the data frames for project information, criterion percentage definitions, and the results for each 
+        air speed.
+
+    6. Output To Excel
+        Outputs the dataframes to an excel spreadsheet in the project location.
+"""
+
 import functools
 import pathlib
-from re import L
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
 import datetime
 from collections import OrderedDict
-
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-# # for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
@@ -36,6 +82,11 @@ class Tm59CalcWizard:
         self.to_excel(inputs, on_linux)
 
     def bedroom_ids(self, inputs):
+        """Obtains the room IDs for the bedrooms by seeing which rooms are occupied between the hours of 10pm and 7am.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+        """
         arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, axis=1)
         self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
         ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
@@ -120,6 +171,12 @@ class Tm59CalcWizard:
         return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
     def run_criterion_two(self):
+        """Run CIBSE TM59 criterion two associated with bedroom comfort. 
+
+        Returns:
+            tuple: First element contains boolean values where True means exceedance.
+                Second element contains the percentage of exceedance.
+        """
         bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
         arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index
 

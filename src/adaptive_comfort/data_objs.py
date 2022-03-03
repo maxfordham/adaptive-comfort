@@ -1,3 +1,6 @@
+"""Class objects used to store the data in a structured manner so the data can be easily accessed in the class wizards.
+"""
+
 class Tm52InputData(object):
     di_project_info = None
     di_aps_info = None
