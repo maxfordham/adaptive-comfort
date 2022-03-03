@@ -15,8 +15,8 @@ from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
 from .constants import DIR_TESTDATA, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, arr_max_adaptive_temp, \
-    arr_running_mean_temp, arr_operative_temp
-
+    arr_running_mean_temp
+    
 
 def read_ies_txt(fpth):
     with open(str(fpth), errors="ignore") as f:
