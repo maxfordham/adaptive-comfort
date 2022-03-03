@@ -46,6 +46,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import np_calc_op_temp
 from adaptive_comfort.utils import create_paths, fromfile, create_df_from_criterion
@@ -213,7 +216,7 @@ class Tm59MechVentCalcWizard:
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         file_name = "TM59__MechVent__{0}.xlsx".format(inputs.di_project_info['project_name'])
-        fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59"
+        fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59mechvent"
         fpth_results = fdir_tm59 / file_name
         if on_linux:
             output_dir = pathlib.Path(fdir_tm59.as_posix().replace("C:/", "/mnt/c/"))
@@ -231,7 +234,7 @@ class Tm59MechVentCalcWizard:
 
 
 if __name__ == "__main__":
-    from constants import DIR_TESTJOB1_TM59
-    paths = create_paths(DIR_TESTJOB1_TM59)
+    from constants import DIR_TESTJOB1_TM59MECHVENT
+    paths = create_paths(DIR_TESTJOB1_TM59MECHVENT)
     tm59_input_data = fromfile(paths)
     tm59_calc = Tm59MechVentCalcWizard(tm59_input_data)

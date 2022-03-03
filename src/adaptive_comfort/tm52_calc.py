@@ -59,6 +59,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, create_df_from_criterion
@@ -186,7 +189,7 @@ class Tm52CalcWizard:
                 },
             "Criterion 2": {
                 "data": zip(arr_criterion_two_bool, arr_criterion_two_max),
-                "value_column": "Criterion 2 (Max Daily Deg. Hours)",
+                "value_column": "Criterion 2 (Max Daily Weight)",
                 },
             "Criterion 3": {
                 "data": zip(arr_criterion_three_bool, arr_criterion_three_max),
