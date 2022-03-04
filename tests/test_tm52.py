@@ -45,15 +45,12 @@ class TestCheckResults:
     def setup_class(cls):
         paths = create_paths(DIR_TESTJOB1_TM52)
         tm52_input_data = fromfile(paths)
-        cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
+        cls.tm52_calc = Tm52CalcWizard(tm52_input_data)
 
     def test_all_criteria(self):
         """Tests to make sure criteria failing in both IES and MF script match. Also checks the margin of error using
         the absolute change and relative change. Outputs excels spreadsheet to view the data.
         """
-        paths = create_paths(DIR_TESTJOB1_TM52)
-        tm52_input_data = fromfile(paths)
-        self.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
         # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 

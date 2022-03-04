@@ -53,18 +53,19 @@ from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_tm59_mechvent
 
 class Tm59MechVentCalcWizard:
-    def __init__(self, inputs, on_linux=True):
+    def __init__(self, inputs, fdir_results=None, on_linux=True):
         """Calculates the operative temperature, maximum adaptive temperature, and delta T for each air speed
         and produces the results in an excel spreadsheet. 
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
+            fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self.op_temp(inputs)
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
-        self.to_excel(inputs, on_linux)
+        self.to_excel(inputs, fdir_results, on_linux)
 
     def op_temp(self, inputs):
         """Calculates the operative temperature for each air speed.
@@ -205,15 +206,20 @@ class Tm59MechVentCalcWizard:
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
 
-    def to_excel(self, inputs, on_linux=True):
+    def to_excel(self, inputs, fdir_results, on_linux=True):
         """Output data frames to excel spreadsheet.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
+            fdir_results (Path): Override project path.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        if fdir_results is None:
+            fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59mechvent"
+        else:
+            fdir_tm59 = fdir_results
+
         file_name = "TM59MechVent__{0}.xlsx".format(inputs.di_project_info['project_name'])
-        fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59mechvent"
         fpth_results = fdir_tm59 / file_name
         if on_linux:
             output_dir = pathlib.Path(fdir_tm59.as_posix().replace("C:/", "/mnt/c/"))
