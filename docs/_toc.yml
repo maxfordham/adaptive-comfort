@@ -4,6 +4,8 @@
 format: jb-book
 root: intro.ipynb
 chapters:
-- file: calculation.md
+- file: calculations.md
+- file: TM52.md
+- file: TM59.md
 - file: tests.ipynb
 - file: api.rst
