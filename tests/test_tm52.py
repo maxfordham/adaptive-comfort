@@ -15,7 +15,7 @@ from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
 from .constants import DIR_TESTDATA, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, arr_max_adaptive_temp, \
-    arr_running_mean_temp
+    arr_running_mean_temp, arr_operative_temp
     
 
 def read_ies_txt(fpth):
@@ -196,38 +196,38 @@ class TestCheckResults:
         assert (rel_change < 5).sum(dtype=bool)
 
 
-    # def test_operative_temp(self):  # TODO: Test won't work until can obtain operative temperature from IES API again.
-    #     """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
-    #     for each room.
-    #     """
-    #     di_op_temp = arr_operative_temp.tolist()
-    #     li_df_concat = []
-    #     for i, j in enumerate(sorted(di_op_temp.items())):
-    #         arr_op_temp = j[1]
-    #         ies_results = arr_op_temp.astype("float64").round(3) 
-    #         mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
-    #         abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
-    #         rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
-    #         di = OrderedDict([
-    #             ("IES Results", ies_results),
-    #             ("MF Results", mf_results),
-    #             ("Absolute Change", abs_change),
-    #             ("Relative Change (%)", rel_change),
-    #         ])
-    #         df = pd.DataFrame.from_dict(di)
-    #         df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
-    #         df[("-", "-")] = np.nan  # Add empty column to split between rooms
-    #         li_df_concat.append(df)
+    def test_operative_temp(self):  # TODO: Test won't work until can obtain operative temperature from IES API again.
+        """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
+        for each room.
+        """
+        di_op_temp = arr_operative_temp.tolist()
+        li_df_concat = []
+        for i, j in enumerate(sorted(di_op_temp.items())):
+            arr_op_temp = j[1]
+            ies_results = arr_op_temp.astype("float64").round(3) 
+            mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
+            abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
+            rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
+            di = OrderedDict([
+                ("IES Results", ies_results),
+                ("MF Results", mf_results),
+                ("Absolute Change", abs_change),
+                ("Relative Change (%)", rel_change),
+            ])
+            df = pd.DataFrame.from_dict(di)
+            df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
+            df[("-", "-")] = np.nan  # Add empty column to split between rooms
+            li_df_concat.append(df)
 
-    #     df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
-    #     df_concat.to_excel(
-    #         str(DIR_TESTDATA / "test_operative_temp.xlsx"), 
-    #         sheet_name="Operative Temp, Air Speed 0.1", 
-    #     )
-    #     abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-    #     rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-    #     assert (abs_change <= 1).sum(dtype=bool)
-    #     assert (rel_change < 5).sum(dtype=bool)
+        df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
+        df_concat.to_excel(
+            str(DIR_TESTDATA / "test_operative_temp.xlsx"), 
+            sheet_name="Operative Temp, Air Speed 0.1", 
+        )
+        abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+        assert (abs_change <= 1).sum(dtype=bool)
+        assert (rel_change < 5).sum(dtype=bool)
 
 
 if __name__ == "__main__":
