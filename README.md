@@ -9,7 +9,7 @@ This package assesses the thermal comfort of a space within a building against t
 - external dry bulb temperature
 - annual occupancy profile
 
-## Outputs: 
+## Outputs 
 - TM52/TM59 pass or fail for each criterion for each room
 
 The calculation is done in python; the inputs for this calculation can be extracted from IES using the VEscripts API, as described here: __[MXF_IES_UserGuide_VEScripts_014](https://wiki.maxfordham.com/pub/Main/MXFIESUSERGUIDEVESCRIPTS/MXF_IES_UserGuide_VEScripts_014.pdf)__. 
