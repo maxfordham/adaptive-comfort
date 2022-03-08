@@ -199,6 +199,8 @@ class Tm59MechVentCalcWizard:
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
+            df_all_criteria = df_all_criteria.set_index("Room Name")  # Set index to room name
+
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
                 "df": df_all_criteria,
@@ -226,7 +228,7 @@ class Tm59MechVentCalcWizard:
                 output_dir.mkdir(parents=True)
             output_path = str(fpth_results)
         to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
-        print("TM59 Calculation Complete.")
+        print("TM59 Mechanically Ventilated Calculation Complete.")
         print("Results File Path: {0}".format(str(fpth_results)))
 
 

@@ -57,9 +57,6 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
@@ -302,8 +299,7 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion A"][speed], self.di_data_frame_criterion["Criterion B"][speed], on=["Room ID"], how="left", suffixes=('', '_y'))
-            df_all_criteria = df_all_criteria.drop("Room Name_y", axis=1)
+            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion A"][speed], self.di_data_frame_criterion["Criterion B"][speed], on=["Room ID", "Room Name"], how="left")
 
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through Criterion B, so we assume that the room passes.
             df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
@@ -320,6 +316,8 @@ class Tm59CalcWizard:
 
             # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
             df_all_criteria.insert(loc=2, column="Vulnerable Occupancy", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
+
+            df_all_criteria = df_all_criteria.set_index("Room Name")  # Set index to room name
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
