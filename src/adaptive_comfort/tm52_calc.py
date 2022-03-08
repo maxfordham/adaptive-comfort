@@ -181,7 +181,7 @@ class Tm52CalcWizard:
 
         self.di_criteria = {
             "Criterion 1": {
-                    "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
+                    "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
                     "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
                 },
             "Criterion 2": {

@@ -100,7 +100,7 @@ class Tm59MechVentCalcWizard:
 
         self.di_criteria = {
             "Fixed Temp Criterion": {
-                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
+                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
                 "value_column": "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)",
                 },
         }

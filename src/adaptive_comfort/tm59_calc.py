@@ -150,7 +150,7 @@ class Tm59CalcWizard:
 
         self.arr_deltaT = deltaT(self.arr_op_temp_v, arr_max_adaptive_temp)
 
-    def run_criterion_one(self, arr_occupancy):
+    def run_criterion_a(self, arr_occupancy):
         """Convert delta T and occupancy array so the reporting interval is hourly, round the values,
         and then run criterion one.
 
@@ -173,7 +173,7 @@ class Tm59CalcWizard:
         arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)
         return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
-    def run_criterion_two(self):
+    def run_criterion_b(self):
         """Run CIBSE TM59 criterion two associated with bedroom comfort. 
 
         Returns:
@@ -198,17 +198,17 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_two()
+        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_a(inputs.arr_occupancy)
+        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_b()
 
         self.di_criteria = {
-            "Criterion 1": {
+            "Criterion A": {
                 "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
-                "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
+                "value_column": "Criterion A (% Hours Delta T >= 1K)",
                 },
-            "Criterion 2": {
+            "Criterion B": {
                 "data": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
-                "value_column": "Criterion 2 (% Hours Operative T > 26 Deg. C)",
+                "value_column": "Criterion B (% Hours Operative T > 26 Deg. C)",
                 },
         }
 
@@ -219,7 +219,7 @@ class Tm59CalcWizard:
         # Constructing dictionary of data frames for each air speed.
         self.di_data_frame_criterion = {}
         for criterion, di_values in self.di_criteria.items():
-            if criterion == "Criterion 1":
+            if criterion == "Criterion A":
                 arr_rooms_sorted = self.arr_sorted_room_names
                 arr_room_ids_sorted = inputs.arr_room_ids_sorted
             else:
@@ -274,8 +274,8 @@ class Tm59CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
-            self.di_criteria["Criterion 2"]["value_column"]: ["The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am."],
+            self.di_criteria["Criterion A"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
+            self.di_criteria["Criterion B"]["value_column"]: ["The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am."],
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
@@ -302,15 +302,15 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name", "Room ID"], how="left")
+            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion A"][speed], self.di_data_frame_criterion["Criterion B"][speed], on=["Room Name", "Room ID"], how="left")
 
-            # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through criterion 2, so we assume that the room passes.
-            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion 1 (Pass/Fail)", "Criterion 2 (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
+            # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through Criterion B, so we assume that the room passes.
+            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
             
             # Map true and false to fail and pass respectively
             li_columns_to_map = [
-                "Criterion 1 (Pass/Fail)",
-                "Criterion 2 (Pass/Fail)",
+                "Criterion A (Pass/Fail)",
+                "Criterion B (Pass/Fail)",
                 "TM59 (Pass/Fail)"
             ]
             di_bool_map = {True: "Fail", False: "Pass"}
