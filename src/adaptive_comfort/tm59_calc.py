@@ -302,8 +302,7 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name", "Room ID"], how="left", suffixes=('', '_y'))
-            df_all_criteria = df_all_criteria.drop("Room ID_y", axis=1)
+            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name", "Room ID"], how="left")
 
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through criterion 2, so we assume that the room passes.
             df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion 1 (Pass/Fail)", "Criterion 2 (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
