@@ -57,6 +57,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
@@ -200,11 +203,11 @@ class Tm59CalcWizard:
 
         self.di_criteria = {
             "Criterion 1": {
-                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
+                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
                 "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
                 },
             "Criterion 2": {
-                "data": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(1)),
+                "data": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
                 "value_column": "Criterion 2 (% Hours Operative T > 26 Deg. C)",
                 },
         }
@@ -299,7 +302,7 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name"], how="left", suffixes=('', '_y'))
+            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion 1"][speed], self.di_data_frame_criterion["Criterion 2"][speed], on=["Room Name", "Room ID"], how="left", suffixes=('', '_y'))
             df_all_criteria = df_all_criteria.drop("Room ID_y", axis=1)
 
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through criterion 2, so we assume that the room passes.
