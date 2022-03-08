@@ -43,10 +43,8 @@ class TestCheckResults:
         """Tests to make sure criteria failing in both IES and MF script match. Also checks the margin of error using
         the absolute change and relative change. Outputs excels spreadsheet to view the data.
         """
-        paths = create_paths(DIR_TESTJOB1_TM52)
-        tm52_input_data = fromfile(paths)
-        self.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
+        df_mf_v_0_1 = df_mf_v_0_1.reset_index()
 
         # Get IES results
         df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
@@ -87,6 +85,7 @@ class TestCheckResults:
             ])
 
         df_criterion = pd.DataFrame.from_dict(di_criteria_failing)
+        df_criterion = df_criterion.set_index("Room Name")  # Set index to room names
         di_criterion_to_excel = {
                 "sheet_name": "Criteria Failing, Air Speed 0.1",
                 "df": df_criterion,
