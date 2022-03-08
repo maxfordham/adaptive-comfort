@@ -57,6 +57,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
 from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
@@ -195,19 +198,20 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_a(inputs.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_percent = self.run_criterion_b()
+        arr_criterion_a_bool, arr_criterion_a_percent = self.run_criterion_a(inputs.arr_occupancy)
+        arr_criterion_b_bool, arr_criterion_b_percent, arr_criterion_b_value = self.run_criterion_b()
 
         self.di_criteria = {
             "Criterion A": {
-                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
-                "value_column": "Criterion A (% Hours Delta T >= 1K)",
+                "Criterion A (Pass/Fail)": arr_criterion_a_bool,
+                "Criterion A (% Hours Delta T >= 1K)": arr_criterion_a_percent.round(2),
                 },
             "Criterion B": {
-                "data": zip(arr_criterion_two_bool, arr_criterion_two_percent.round(2)),
-                "value_column": "Criterion B (% Hours Operative T > 26 Deg. C)",
+                "Criterion B (Pass/Fail)": arr_criterion_b_bool,
+                "Criterion B (Hours)": arr_criterion_b_value,
+                "Criterion B (% Hours Operative T > 26 Deg. C)": arr_criterion_b_percent.round(2),
                 },
-        }
+}
 
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
         self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
@@ -215,7 +219,7 @@ class Tm59CalcWizard:
 
         # Constructing dictionary of data frames for each air speed.
         self.di_data_frame_criterion = {}
-        for criterion, di_values in self.di_criteria.items():
+        for criterion, di_criterion in self.di_criteria.items():
             if criterion == "Criterion A":
                 arr_rooms_sorted = self.arr_sorted_room_names
                 arr_room_ids_sorted = inputs.arr_room_ids_sorted
@@ -227,9 +231,7 @@ class Tm59CalcWizard:
                 arr_rooms_sorted, 
                 arr_room_ids_sorted,
                 self.li_air_speeds_str, 
-                di_values["data"], 
-                criterion,
-                di_values["value_column"]
+                di_criterion
             )
     
     def create_df_project_info(self, inputs):
@@ -271,8 +273,9 @@ class Tm59CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            self.di_criteria["Criterion A"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
-            self.di_criteria["Criterion B"]["value_column"]: ["The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am."],
+            "Criterion A (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
+            "Criterion B (% Hours Operative T > 26 Deg. C)": "The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am.",
+            "Criterion B (Hours Operative T > 26 Deg. C)": "Number of hours where the operative temperature is strictly greater than 26 Deg. C." 
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})

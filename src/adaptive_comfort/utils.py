@@ -228,32 +228,72 @@ def fromfile(paths):
     return input_data
 
 
-def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, zip_criterion, str_criterion_name, str_value_col):
+# def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, zip_criterion, str_criterion_name, str_value_col):
+#     """Creates pandas data frame for a criterion.
+
+#     Args:
+#         arr_sorted_room_names (numpy.ndarray): Sorted room names
+#         arr_sorted_room_ids (numpy.ndarray): Sorted room IDs
+#         li_air_speeds_str (list): list of air speeds
+#         zip_criterion (zip): zip of criterion data
+#         str_criterion_name (str): criterion name
+#         str_value_col (str): criterion value name
+
+#     Returns:
+#         dict: dict of data frames for each air speed.
+#     """
+#     str_criterion_pass_fail_col = "{0} (Pass/Fail)".format(str_criterion_name)
+#     li_room_criterion = [{
+#         "i": i,
+#         "Room Name": arr_sorted_room_names,
+#         "Room ID": arr_sorted_room_ids, 
+#         str_criterion_pass_fail_col: arr_room[0],
+#         str_value_col: arr_room[1],
+#     } for i, arr_room in enumerate(zip_criterion)]
+
+#     di_data_frames_criterion = {
+#         speed: pd.DataFrame(data, columns=["Room Name", "Room ID", str_value_col, str_criterion_pass_fail_col]) 
+#             for speed, data in zip(li_air_speeds_str, li_room_criterion)
+#         }
+#     return di_data_frames_criterion
+
+
+
+
+def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, di_criterion):
     """Creates pandas data frame for a criterion.
 
     Args:
         arr_sorted_room_names (numpy.ndarray): Sorted room names
         arr_sorted_room_ids (numpy.ndarray): Sorted room IDs
-        li_air_speeds_str (list): list of air speeds
-        zip_criterion (zip): zip of criterion data
-        str_criterion_name (str): criterion name
-        str_value_col (str): criterion value name
+        li_air_speeds_str (list): list of air speeds       
+        di_criterion (dict): criterion data with column names
+            Example:
+                di_criterion = {
+                    "Criterion A": {
+                        "Criterion A (Pass/Fail)": arr_criterion_a_bool,
+                        "Criterion A (% Hours Delta T >= 1K)": arr_criterion_a_percent.round(2),
+                        }
 
     Returns:
         dict: dict of data frames for each air speed.
     """
-    str_criterion_pass_fail_col = "{0} (Pass/Fail)".format(str_criterion_name)
-    li_room_criterion = [{
-        "Room Name": arr_sorted_room_names,
-        "Room ID": arr_sorted_room_ids, 
-        str_criterion_pass_fail_col: arr_room[0],
-        str_value_col: arr_room[1],
-    } for arr_room in zip_criterion]
-
-    di_data_frames_criterion = {
-        speed: pd.DataFrame(data, columns=["Room Name", "Room ID", str_value_col, str_criterion_pass_fail_col]) 
-            for speed, data in zip(li_air_speeds_str, li_room_criterion)
+    li_room_criterion = []
+    for i, speed in enumerate(li_air_speeds_str):  # Loop through air speeds and add specified columns with data from di_criterion
+        di = {
+            "Room Name": arr_sorted_room_names,
+            "Room ID": arr_sorted_room_ids, 
         }
+        for k, v in di_criterion.items():
+            di[k] = v[i]
+            
+        li_room_criterion.append(di)
+
+    columns = [name for name in li_room_criterion[0].keys()]  # Obtaining columns for data frame
+    di_data_frames_criterion = {
+        speed: pd.DataFrame(data, columns=columns) 
+            for speed, data in zip(li_air_speeds_str, li_room_criterion)
+        }  # Creating dictionary of data frames for each air speed
     return di_data_frames_criterion
 
 
