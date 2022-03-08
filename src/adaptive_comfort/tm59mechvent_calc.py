@@ -46,6 +46,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import np_calc_op_temp
 from adaptive_comfort.utils import create_paths, fromfile, create_df_from_criterion
@@ -100,8 +103,8 @@ class Tm59MechVentCalcWizard:
 
         self.di_criteria = {
             "Fixed Temp Criterion": {
-                "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(2)),
-                "value_column": "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)",
+                "Fixed Temp Criterion (Pass/Fail)": arr_criterion_one_bool,
+                "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": arr_criterion_one_percent.round(2),
                 },
         }
 
@@ -109,19 +112,16 @@ class Tm59MechVentCalcWizard:
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
         # Constructing dictionary of data frames for each air speed.
-        self.di_data_frame_criterion = {}
-        for criterion, di_values in self.di_criteria.items():
+        self.di_data_frame_criteria = {}
+        for criterion, di_criterion in self.di_criteria.items():
             arr_rooms_sorted = self.arr_sorted_room_names
             arr_room_ids_sorted = inputs.arr_room_ids_sorted
-
-            self.di_data_frame_criterion[criterion] = create_df_from_criterion(
+            self.di_data_frame_criteria[criterion] = create_df_from_criterion(
                 arr_rooms_sorted, 
                 arr_room_ids_sorted,
                 self.li_air_speeds_str, 
-                di_values["data"], 
-                criterion,
-                di_values["value_column"]
-            )
+                di_criterion
+            )   
     
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
@@ -162,7 +162,7 @@ class Tm59MechVentCalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            self.di_criteria["Fixed Temp Criterion"]["value_column"]: ["The percentage of time where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual time."],
+            "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": "The percentage of time where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual time.",
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
@@ -189,7 +189,7 @@ class Tm59MechVentCalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = self.di_data_frame_criterion["Fixed Temp Criterion"][speed]
+            df_all_criteria = self.di_data_frame_criteria["Fixed Temp Criterion"][speed]
           
             # Map true and false to fail and pass respectively
             li_columns_to_map = [

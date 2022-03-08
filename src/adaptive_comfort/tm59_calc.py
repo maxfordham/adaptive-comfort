@@ -208,17 +208,17 @@ class Tm59CalcWizard:
                 },
             "Criterion B": {
                 "Criterion B (Pass/Fail)": arr_criterion_b_bool,
-                "Criterion B (Hours)": arr_criterion_b_value,
+                "Criterion B (Hours Operative T > 26 Deg. C)": arr_criterion_b_value,
                 "Criterion B (% Hours Operative T > 26 Deg. C)": arr_criterion_b_percent.round(2),
                 },
-}
+        }
 
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
         self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
         # Constructing dictionary of data frames for each air speed.
-        self.di_data_frame_criterion = {}
+        self.di_data_frame_criteria = {}
         for criterion, di_criterion in self.di_criteria.items():
             if criterion == "Criterion A":
                 arr_rooms_sorted = self.arr_sorted_room_names
@@ -227,7 +227,7 @@ class Tm59CalcWizard:
                 arr_rooms_sorted = self.arr_sorted_bedroom_names
                 arr_room_ids_sorted = self.arr_bedroom_ids
 
-            self.di_data_frame_criterion[criterion] = create_df_from_criterion(
+            self.di_data_frame_criteria[criterion] = create_df_from_criterion(
                 arr_rooms_sorted, 
                 arr_room_ids_sorted,
                 self.li_air_speeds_str, 
@@ -302,7 +302,7 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criterion["Criterion A"][speed], self.di_data_frame_criterion["Criterion B"][speed], on=["Room ID", "Room Name"], how="left")
+            df_all_criteria = pd.merge(self.di_data_frame_criteria["Criterion A"][speed], self.di_data_frame_criteria["Criterion B"][speed], on=["Room ID", "Room Name"], how="left")
 
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through Criterion B, so we assume that the room passes.
             df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
