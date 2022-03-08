@@ -46,9 +46,6 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
-import sys
-sys.path.append(str(pathlib.Path(__file__).parents[1]))
-
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import np_calc_op_temp
 from adaptive_comfort.utils import create_paths, fromfile, create_df_from_criterion
