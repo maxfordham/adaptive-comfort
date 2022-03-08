@@ -1,20 +1,12 @@
 """Tests for `adaptive_comfort` package."""
-
-import pytest
 import numpy as np
-import numpy.ma as ma
 import pandas as pd
 from collections import OrderedDict
-
-import sys; import pathlib
-DIR_MODULE = pathlib.Path(__file__).parents[1] / 'src'
-sys.path.append(str(DIR_MODULE))
-# for dev only
 
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
-from .constants import DIR_TESTDATA, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, arr_max_adaptive_temp, \
+from .constants import DIR_TESTOUTPUTS, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, arr_max_adaptive_temp, \
     arr_running_mean_temp, arr_operative_temp
     
 
@@ -55,11 +47,9 @@ class TestCheckResults:
         tm52_input_data = fromfile(paths)
         self.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
         df_mf_v_0_1 = self.tm52_calc.li_all_criteria_data_frames[2]["df"]  # df for 0.1 air speed
-        # df_mf_v_0_5 = self.tm52_calc.li_all_criteria_data_frames[7]["df"]  # df for 0.5 air speed
 
         # Get IES results
         df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
-        # df_ies_v_0_5 = pd.read_csv(FPTH_IES_TESTJOB1_V_0_5, header=22)
 
         # Mapping mf results to ies results.
         chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", "1", ""))
@@ -145,7 +135,7 @@ class TestCheckResults:
         arr_criterion_abs_change = np.where(np.isfinite(arr_criterion_abs_change), arr_criterion_abs_change, 0)  # Set nans to 0
         arr_criterion_rel_change = np.where(np.isfinite(arr_criterion_rel_change), arr_criterion_rel_change, 0) 
 
-        to_excel(data_object=li_criteria_to_excel, fpth=str(DIR_TESTDATA / "test_all_criteria.xlsx"), open=False)
+        to_excel(data_object=li_criteria_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_all_criteria.xlsx"), open=False)
         assert arr_criteria_failing_bool.sum(dtype=bool) == True  # Do criteria failing match?
         assert (arr_criterion_abs_change <= 1).sum(dtype=bool) == True  # Does the absolute difference for all criteria have a value less than or equal to 1?
         assert (arr_criterion_rel_change < 5).sum(dtype=bool) == True  # Does the relative difference for all criteria have a margin of error less than 5%?
@@ -168,7 +158,7 @@ class TestCheckResults:
             "sheet_name": "Running Mean Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTDATA / "test_running_mean_temp.xlsx"), open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_running_mean_temp.xlsx"), open=False)
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
@@ -191,7 +181,7 @@ class TestCheckResults:
             "sheet_name": "Max Acceptable Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTDATA / "test_max_acceptable_temp.xlsx"), open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_max_acceptable_temp.xlsx"), open=False)
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
@@ -221,7 +211,7 @@ class TestCheckResults:
 
         df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
         df_concat.to_excel(
-            str(DIR_TESTDATA / "test_operative_temp.xlsx"), 
+            str(DIR_TESTOUTPUTS / "test_operative_temp.xlsx"), 
             sheet_name="Operative Temp, Air Speed 0.1", 
         )
         abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
@@ -231,6 +221,11 @@ class TestCheckResults:
 
 
 if __name__ == "__main__":
+    # import sys; import pathlib
+    # DIR_MODULE = pathlib.Path(__file__).parents[1] / 'src'
+    # sys.path.append(str(DIR_MODULE))
+    # # for dev only
+
     df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
     test_check_results = TestCheckResults()
     test_check_results.test_all_criteria()
