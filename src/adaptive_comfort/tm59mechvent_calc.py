@@ -199,7 +199,7 @@ class Tm59MechVentCalcWizard:
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
-            df_all_criteria = df_all_criteria.set_index("Room Name")  # Set index to room name
+            df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),

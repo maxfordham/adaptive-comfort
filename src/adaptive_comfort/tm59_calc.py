@@ -317,7 +317,7 @@ class Tm59CalcWizard:
             # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
             df_all_criteria.insert(loc=2, column="Vulnerable Occupancy", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
 
-            df_all_criteria = df_all_criteria.set_index("Room Name")  # Set index to room name
+            df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
