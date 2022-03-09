@@ -167,44 +167,44 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
-        # We only consider analysed rooms for TM52
-        li_room_ids_sorted = []
-        for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
-            if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
-                li_room_ids_sorted.append(room_id)
+        # # We only consider analysed rooms for TM52
+        # li_room_ids_sorted = []
+        # for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
+        #     if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
+        #         li_room_ids_sorted.append(room_id)
 
-        self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
+        # self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
+        # self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
 
-        # Constructing dictionary of data frames for each air speed.
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
         self.di_criteria = {
             "Criterion 1": {
-                    "data": zip(arr_criterion_one_bool, arr_criterion_one_percent.round(1)),
-                    "value_column": "Criterion 1 (% Hours Delta T >= 1K)",
+                "Criterion 1 (Pass/Fail)": arr_criterion_one_bool,
+                "Criterion 1 (% Hours Delta T >= 1K)": arr_criterion_one_percent.round(2),
                 },
             "Criterion 2": {
-                "data": zip(arr_criterion_two_bool, arr_criterion_two_max),
-                "value_column": "Criterion 2 (Max Daily Weight)",
+                "Criterion 2 (Pass/Fail)": arr_criterion_two_bool,
+                "Criterion 2 (Max Daily Weight)": arr_criterion_two_max,
                 },
             "Criterion 3": {
-                "data": zip(arr_criterion_three_bool, arr_criterion_three_max),
-                "value_column": "Criterion 3 (Max Delta T)",
+                "Criterion 3 (Pass/Fail)": arr_criterion_three_bool,
+                "Criterion 3 (Max Delta T)": arr_criterion_three_max,
             }
         }
 
-        self.di_data_frames_criteria = {}
-        for criterion, di_values in self.di_criteria.items():
-            self.di_data_frames_criteria[criterion] = create_df_from_criterion(
-                self.arr_sorted_room_names, 
-                self.arr_filtered_room_ids_sorted,
+        # Constructing dictionary of data frames for each air speed.
+        self.di_data_frame_criteria = {}
+        for criterion, di_criterion in self.di_criteria.items():
+            arr_rooms_sorted = self.arr_sorted_room_names
+            arr_room_ids_sorted = inputs.arr_room_ids_sorted
+            self.di_data_frame_criteria[criterion] = create_df_from_criterion(
+                arr_rooms_sorted, 
+                arr_room_ids_sorted,
                 self.li_air_speeds_str, 
-                di_values["data"], 
-                criterion,
-                di_values["value_column"]
-                )
-            
+                di_criterion
+            )            
 
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
@@ -224,7 +224,7 @@ class Tm52CalcWizard:
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
             ("Job Number", job_no),
-            ("Analysed Spaces", str(len(self.arr_filtered_room_ids_sorted))),
+            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
             ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),
@@ -245,9 +245,9 @@ class Tm52CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            self.di_criteria["Criterion 1"]["value_column"]: ["The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours."],
-            self.di_criteria["Criterion 2"]["value_column"]: ["The maximum daily weight taken from the year."],
-            self.di_criteria["Criterion 3"]["value_column"]: ["The maximum delta T taken from the year."],
+            "Criterion 1 (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
+            "Criterion 2 (Max Daily Weight)": "The maximum daily weight taken from the year.",
+            "Criterion 3 (Max Delta T)": "The maximum delta T taken from the year.",
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
@@ -274,8 +274,8 @@ class Tm52CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_criteria_one_and_two = pd.merge(self.di_data_frames_criteria["Criterion 1"][speed], self.di_data_frames_criteria["Criterion 2"][speed], on=["Room Name", "Room ID"])
-            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frames_criteria["Criterion 3"][speed], on=["Room Name", "Room ID"])
+            df_criteria_one_and_two = pd.merge(self.di_data_frame_criteria["Criterion 1"][speed], self.di_data_frame_criteria["Criterion 2"][speed], on=["Room ID", "Room Name"])
+            df_all_criteria = pd.merge(df_criteria_one_and_two, self.di_data_frame_criteria["Criterion 3"][speed], on=["Room ID", "Room Name"])
 
             # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
             df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
@@ -290,6 +290,8 @@ class Tm52CalcWizard:
             di_bool_map = {True: "Fail", False: "Pass"}
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+
+            df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),

@@ -104,7 +104,8 @@ def criterion_bedroom_comfort(arr_op_temp_v_hourly):
     arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
     arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
     arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
-    return arr_bool, arr_percent
+    arr_value = arr_bedroom_comfort_total_hours
+    return arr_bool, arr_percent, arr_value
 
 
 def criterion_tm59_mechvent(arr_op_temp_v, arr_occupancy):
