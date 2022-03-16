@@ -204,7 +204,7 @@ class TestCheckResults:
                 ("Relative Change (%)", rel_change),
             ])
             df = pd.DataFrame.from_dict(di)
-            df.columns = pd.MultiIndex.from_product([str(j[0]), df.columns[df.columns != '']])
+            df.columns = pd.MultiIndex.from_product([[str(j[0])], df.columns[df.columns != '']])
             df[("-", "-")] = np.nan  # Add empty column to split between rooms
             li_df_concat.append(df)
 
