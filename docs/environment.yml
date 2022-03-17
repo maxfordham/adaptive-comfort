@@ -10,6 +10,7 @@ dependencies:
   - python
   - numpy
   - pandas
+  - matplotlib
   - xlsxwriter
   - markdown
   - nodejs

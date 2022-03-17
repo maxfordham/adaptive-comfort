@@ -3,7 +3,7 @@
 
 title: adaptive_comfort
 author: mfcode
-logo: logo.png
+logo: images/logo.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -30,6 +30,7 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+  favicon: images/logo.ico
 
 
 sphinx:
@@ -40,6 +41,7 @@ sphinx:
   - 'sphinx.ext.todo'
   - 'sphinx.ext.autosummary'
   - 'autoapi.extension'
+  - 'sphinxcontrib.mermaid'
   config:
     # add_module_names: False
     # autosummary_generate: True
