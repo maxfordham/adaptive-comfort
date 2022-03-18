@@ -1,0 +1,14 @@
+name: adaptive_comfort
+# channels priority
+# see https://bioconda.github.io/
+# conda-forge has highest prioriy
+channels:
+  - defaults
+  - conda-forge
+#  - http://10.10.30.125:8000
+dependencies:
+  - python==3.4.5
+  - numpy
+  - pandas
+  - xlsxwriter
+  - pytest

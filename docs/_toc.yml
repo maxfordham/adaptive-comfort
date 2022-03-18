@@ -1,0 +1,11 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: intro.ipynb
+chapters:
+- file: calculations.md
+- file: TM52.md
+- file: TM59.md
+- file: tests.ipynb
+- file: api.rst
