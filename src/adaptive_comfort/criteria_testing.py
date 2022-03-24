@@ -7,37 +7,59 @@ from adaptive_comfort.utils import np_round_half_up, filter_bedroom_comfort_time
 from adaptive_comfort.equations import daily_weighted_exceedance
 
 
-def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
-    """Calculates whether a room has exceeded the threshold for hours of exceedance. 
-    Also calculates the percentage of occupied hours exceeded out of total occupied hours for each room.
+# def criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly):
+#     """Calculates whether a room has exceeded the threshold for hours of exceedance. 
+#     Also calculates the percentage of occupied hours exceeded out of total occupied hours for each room.
 
-    *See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
+#     *See CIBSE TM52: 2013, Page 13, Section 6.1.2a*
     
-    Args:
-        arr_deltaT_hourly (numpy.ndarray): Delta T (Operative temperature - Max acceptable temperature)
-        arr_occupancy (numpy.ndarray): Occupancy (Number of people)
+#     Args:
+#         arr_deltaT_hourly (numpy.ndarray): Delta T (Operative temperature - Max acceptable temperature)
+#         arr_occupancy (numpy.ndarray): Occupancy (Number of people)
 
-    Returns:
-        tuple: First element contains boolean values where True means exceedance.
-            Second element contains the percentage of exceedance.
-    """
-    arr_deltaT_may_to_sept_hourly = arr_deltaT_hourly[:, :, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining deltaT between May and end of September
-    arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining occupancy between May and end of September
+#     Returns:
+#         tuple: First element contains boolean values where True means exceedance.
+#             Second element contains the percentage of exceedance.
+#     """
+#     arr_deltaT_may_to_sept_hourly = arr_deltaT_hourly[:, :, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining deltaT between May and end of September
+#     arr_occupancy_may_to_sept_hourly = arr_occupancy_hourly[:, MAY_START_HOUR:SEPT_END_HOUR]  # Obtaining occupancy between May and end of September
 
-    arr_deltaT_occupied_may_to_sept_hourly = np.where(arr_occupancy_may_to_sept_hourly==0, 0, arr_deltaT_may_to_sept_hourly)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
-    # arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
-    arr_deltaT_occupied_may_to_sept_hourly = arr_deltaT_occupied_may_to_sept_hourly.round()
+#     arr_deltaT_occupied_may_to_sept_hourly = np.where(arr_occupancy_may_to_sept_hourly==0, 0, arr_deltaT_may_to_sept_hourly)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
+#     # arr_deltaT_occupied_may_to_sept_hourly = np_round_half_up(arr_deltaT_occupied_may_to_sept_hourly).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
+#     arr_deltaT_occupied_may_to_sept_hourly = arr_deltaT_occupied_may_to_sept_hourly.round()
 
-    arr_deltaT_bool = arr_deltaT_occupied_may_to_sept_hourly >= 1  # Find where delta T is greater than or equal to 1K.
-    arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours) to get total hours of exceedance per room
+#     arr_deltaT_bool = arr_deltaT_occupied_may_to_sept_hourly >= 1  # Find where delta T is greater than or equal to 1K.
+#     arr_room_total_hours_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (hours) to get total hours of exceedance per room
     
-    arr_occupancy_bool = arr_occupancy_may_to_sept_hourly > 0  # True where hour has occupancy greater than 0
-    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axis (hours), i.e. sum hours per room where occupied
+#     arr_occupancy_bool = arr_occupancy_may_to_sept_hourly > 0  # True where hour has occupancy greater than 0
+#     arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axis (hours), i.e. sum hours per room where occupied
 
-    arr_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
-    arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
+#     arr_bool = arr_room_total_hours_exceedance > arr_occupancy_3_percent
+#     arr_percent = (arr_room_total_hours_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied hours exceeded out of total occupied hours
+#     return arr_bool, arr_percent
+
+
+def criterion_hours_of_exceedance(arr_deltaT, arr_occupancy):
+    factor = int(arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
+    MAY_START = factor * MAY_START_HOUR
+    SEPT_END = factor * SEPT_END_HOUR
+
+    arr_deltaT_may_to_sept = arr_deltaT[:, :, MAY_START:SEPT_END]  # Obtaining deltaT between May and end of September
+    arr_occupancy_may_to_sept = arr_occupancy[:, MAY_START:SEPT_END]  # Obtaining occupancy between May and end of September
+
+    arr_deltaT_occupied_may_to_sept = np.where(arr_occupancy_may_to_sept==0, 0, arr_deltaT_may_to_sept)  # Where unoccupied, set delta T to 0 to ignore in criterion test.
+    # arr_deltaT_occupied_may_to_sept = np_round_half_up(arr_deltaT_occupied_may_to_sept).astype(int)  # Round delta T as specified by CIBSE TM52 guide.
+    arr_deltaT_occupied_may_to_sept = arr_deltaT_occupied_may_to_sept.round()
+
+    arr_deltaT_bool = arr_deltaT_occupied_may_to_sept >= 1  # Find where delta T is greater than or equal to 1K.
+    arr_room_total_time_exceedance = arr_deltaT_bool.sum(axis=2)  # Sum along last axis (time) to get total time of exceedance per room
+    
+    arr_occupancy_bool = arr_occupancy_may_to_sept > 0  # True where period has occupancy greater than 0
+    arr_occupancy_3_percent = arr_occupancy_bool.sum(axis=1)*0.03  # Sum along time-step axis (time), i.e. sum time per room where occupied
+
+    arr_bool = arr_room_total_time_exceedance > arr_occupancy_3_percent
+    arr_percent = (arr_room_total_time_exceedance/arr_occupancy_bool.sum(axis=1))*100  # Percentage of occupied time exceeded out of total occupied time
     return arr_bool, arr_percent
-
 
 def criterion_daily_weighted_exceedance(arr_deltaT, arr_occupancy):
     """Calculates whether a room has exceeded the daily weighted exceedance.
@@ -83,30 +105,48 @@ def criterion_upper_limit_temperature(arr_deltaT):
     return arr_criterion_three_bool, arr_max
 
 
-def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+# def criterion_bedroom_comfort(arr_op_temp_v_hourly):
+#     """Guarantee comfort during the sleeping hours. The operative temperature in the bedroom from 10pm to 7am must not exceed 26 degrees celsius
+#     for more than 1% of annual hours.
+
+#     Args:
+#         arr_op_temp_v_hourly (numpy.ndarray): Operative temperatue for each air speed with time-step interval as hourly
+
+#     Raises:
+#         ValueError: If time-step interval not length 8760 then must not be hourly.
+
+#     Returns:
+#         tuple: Returns room that failed and passed
+#             Percentage where hours exceeded 26 degrees celsius
+#     """
+#     if arr_op_temp_v_hourly.shape[2] != 8760:
+#         raise ValueError("Reporting intervals are not hourly for the operative temperature.")
+#     arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
+#     arr_bedroom_comfort_exceed_temp_bool = arr_op_temp_v_bedroom_comfort > 26
+#     arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
+#     arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
+#     arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
+#     arr_value = arr_bedroom_comfort_total_hours
+#     return arr_bool, arr_percent, arr_value
+
+def criterion_bedroom_comfort(arr_op_temp_v, factor):
     """Guarantee comfort during the sleeping hours. The operative temperature in the bedroom from 10pm to 7am must not exceed 26 degrees celsius
-    for more than 1% of annual hours.
+    for more than 1% of the annual time.
 
     Args:
-        arr_op_temp_v_hourly (numpy.ndarray): Operative temperatue for each air speed with time-step interval as hourly
-
-    Raises:
-        ValueError: If time-step interval not length 8760 then must not be hourly.
+        arr_op_temp_v (numpy.ndarray): Operative temperatue for each air speed at every time-step interval
 
     Returns:
         tuple: Returns room that failed and passed
             Percentage where hours exceeded 26 degrees celsius
     """
-    if arr_op_temp_v_hourly.shape[2] != 8760:
-        raise ValueError("Reporting intervals are not hourly for the operative temperature.")
-    arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v_hourly)
+    arr_op_temp_v_bedroom_comfort = filter_bedroom_comfort_time(arr_op_temp_v)
     arr_bedroom_comfort_exceed_temp_bool = arr_op_temp_v_bedroom_comfort > 26
-    arr_bedroom_comfort_total_hours = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
-    arr_bool = arr_bedroom_comfort_total_hours > 32  # Can't exceed 32 hours (1 percent of annual hours between 10pm and 7am)
-    arr_percent = (arr_bedroom_comfort_total_hours / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of hours exceeding 26 degrees celsius over total annual hours between 10pm and 7am
-    arr_value = arr_bedroom_comfort_total_hours
+    arr_bedroom_comfort_total_time = arr_bedroom_comfort_exceed_temp_bool.sum(axis=2)
+    arr_bool = arr_bedroom_comfort_total_time > 32 * factor  # Can't exceed 1 percent of annual time between 10pm and 7am
+    arr_percent = (arr_bedroom_comfort_total_time / arr_op_temp_v_bedroom_comfort.shape[2]) * 100  # Percentage of time exceeding 26 degrees celsius over total annual hours between 10pm and 7am
+    arr_value = arr_bedroom_comfort_total_time
     return arr_bool, arr_percent, arr_value
-
 
 def criterion_tm59_mechvent(arr_op_temp_v, arr_occupancy):
     """For homes with restricted window openings, we must follow this CIBSE criterion.

@@ -132,16 +132,16 @@ def repeat_every_element_n_times(arr, n=24, axis=0):
     """
     return np.repeat(arr, n, axis)
 
-def filter_bedroom_comfort_one_day(arr):
-    """Take an hourly time-step array for a day and returns the hours between 10pm and 7am.
+def filter_bedroom_comfort_one_day(arr, factor):
+    """Take any time-step array for a day and return the time between 10pm and 7am.
 
     Args:
-        arr (numpy.ndarray): hourly time-step array for a day
+        arr (numpy.ndarray): any time-step array for a day
 
     Returns:
-        numpy.ndarray: hourly time-step array of hours 10pm to 7am
+        numpy.ndarray: time-step array between hours 10pm to 7am
     """
-    return np.concatenate([arr[:7], arr[-2:]])
+    return np.concatenate([arr[:7*factor], arr[-2*factor:]])
 
 def filter_bedroom_comfort_many_days(arr, axis=1):
     """Takes a multiple hourly time-step array for multiple days and returns the hours between 10pm and 7am for each one of those days. 
