@@ -74,6 +74,7 @@ class Tm59CalcWizard:
             fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        print(self.factor)
         self.bedroom_ids(inputs)
         self.op_temp(inputs)
         self.max_adaptive_temp(inputs)
@@ -82,14 +83,17 @@ class Tm59CalcWizard:
         self.merge_dfs(inputs)
         self.to_excel(inputs, fdir_results, on_linux)
 
+    @property
+    def factor(self):
+        return int(inputs.arr_dry_bulb_temp / 8760)  # Find factor to hourly time-step array 
+
     def bedroom_ids(self, inputs):
         """Obtains the room IDs for the bedrooms by seeing which rooms are occupied between the hours of 10pm and 7am.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        factor = inputs.arr_occupancy.shape[2] / 8760
-        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, factor, axis=1)
+        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, self.factor, axis=1)
         self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
         ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
         self.arr_bedroom_ids = ma_arr_bedroom_ids.compressed()
@@ -171,9 +175,8 @@ class Tm59CalcWizard:
                 Second element contains the percentage of exceedance.
         """
         bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
-        arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index
-        factor = int(arr_op_temp_v_bedrooms.shape[2]/8760)  # Find factor to hourly time-step array            
-        return criterion_bedroom_comfort(arr_op_temp_v_bedrooms, factor)
+        arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index           
+        return criterion_bedroom_comfort(arr_op_temp_v_bedrooms, self.factor)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
