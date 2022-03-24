@@ -88,7 +88,8 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, axis=1)
+        factor = inputs.arr_occupancy.shape[2] / 8760
+        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, factor, axis=1)
         self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
         ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
         self.arr_bedroom_ids = ma_arr_bedroom_ids.compressed()
