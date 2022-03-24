@@ -93,7 +93,7 @@ class TestCheckResults:
         
         di_names = {
             "Criterion 1": {
-                "mf_name": "Criterion 1 (% Hours Delta T >= 1K)",
+                "mf_name": "Criterion 1 (% Time Delta T >= 1K)",
                 "ies_name": "Criteria 1 (%Hrs Top-Tmax>=1K)",
             },
             "Criterion 2": {
