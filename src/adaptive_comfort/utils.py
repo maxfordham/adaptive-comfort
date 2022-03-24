@@ -143,34 +143,35 @@ def filter_bedroom_comfort_one_day(arr, factor):
     """
     return np.concatenate([arr[:7*factor], arr[-2*factor:]])
 
-def filter_bedroom_comfort_many_days(arr, axis=1):
-    """Takes a multiple hourly time-step array for multiple days and returns the hours between 10pm and 7am for each one of those days. 
-    Note: The array must be a length where 24 is a factor of it.
+def filter_bedroom_comfort_many_days(arr, factor, axis=1):
+    """Takes a multiple time-step array for multiple days and returns the time between 10pm and 7am for each one of those days. 
 
     Args:
-        arr (numpy.ndarray): hourly time-step array for many days
+        arr (numpy.ndarray): time-step array for many days
         axis (int, optional): Axis to apply function over. Defaults to 1.
 
     Returns:
-        numpy.ndarray: hourly time-step array of hours 10pm to 7am for multiple days
+        numpy.ndarray: time-step array of time between 10pm to 7am for multiple days
     """
-    arr_daily_split = np.reshape(arr, (-1, 24))  # Split yearly arrays into daily arrays
-    arr_bedroom_comfort_split = np.apply_along_axis(filter_bedroom_comfort_one_day, axis, arr_daily_split)
+    arr_daily_split = np.reshape(arr, (-1, 24*factor))  # Split yearly arrays into daily arrays
+    f = functools.partial(filter_bedroom_comfort_one_day, factor=factor)
+    arr_bedroom_comfort_split = np.apply_along_axis(f, axis, arr_daily_split)
     arr_bedroom_comfort = np.concatenate(arr_bedroom_comfort_split).ravel()
     return arr_bedroom_comfort
 
-def filter_bedroom_comfort_time(arr, axis=2):
-    """Takes a multiple hourly time-step array for multiple days for multiple rooms and returns the hours between 10pm and 7am 
+def filter_bedroom_comfort_time(arr, factor, axis=2):
+    """Takes a multiple time-step array for multiple days for multiple rooms and returns the time between 10pm and 7am 
     for each one of those days for each room. 
 
     Args:
-        arr (numpy.ndarray): hourly time-step array for many days for multiple rooms
+        arr (numpy.ndarray): time-step array for many days for multiple rooms
         axis (int, optional): Axis to apply function over. Defaults to 2.
 
     Returns:
-        numpy.ndarray: ourly time-step array of hours 10pm to 7am for multiple days for each room
+        numpy.ndarray: time-step array of time 10pm to 7am for multiple days for each room
     """
-    return np.apply_along_axis(filter_bedroom_comfort_many_days, axis, arr)
+    f = functools.partial(filter_bedroom_comfort_many_days, factor=factor)
+    return np.apply_along_axis(f, axis, arr)
 
 
 def create_paths(fdir):
