@@ -84,7 +84,7 @@ class Tm59CalcWizard:
         self.to_excel(inputs, fdir_results, on_linux)
 
     @property
-    def factor(self):
+    def factor(self, inputs):
         return int(inputs.arr_dry_bulb_temp / 8760)  # Find factor to hourly time-step array 
 
     def bedroom_ids(self, inputs):
