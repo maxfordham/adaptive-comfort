@@ -36,11 +36,11 @@ Process
 
     4. Run through the TM52 criteria
         Criterion one 
-            No room can have delta T equal or exceed the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
-            total occupied hours.
+            No room can have delta T equal or exceed the threshold (1 kelvin) during occupied time for more than 3 percent of the 
+            total occupied time.
         Criterion two
             No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
-            within occupied hours.
+            within occupied time.
         Criterion three 
             No room, at any point, can have a reading where delta T exceeds the threshold (4 kelvin).
 
@@ -59,11 +59,14 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, create_df_from_criterion
+from adaptive_comfort.utils import np_round_half_up, repeat_every_element_n_times, create_paths, fromfile, create_df_from_criterion
 from adaptive_comfort.constants import arr_air_speed
-from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature
+from adaptive_comfort.criteria_testing import criterion_time_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature
 
 class Tm52CalcWizard:
     def __init__(self, inputs, fdir_results=None, on_linux=True):
@@ -75,6 +78,7 @@ class Tm52CalcWizard:
             fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        self.factor = int(inputs.arr_air_temp.shape[1] / 8760)  # Find factor to hourly time-step array 
         self.op_temp(inputs)
         self.max_acceptable_temp(inputs)
         self.deltaT()
@@ -125,16 +129,8 @@ class Tm52CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        factor = int(self.arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
-        if factor > 1:
-            f = functools.partial(mean_every_n_elements, n=factor)
-            arr_deltaT_hourly = np.apply_along_axis(f, 2, self.arr_deltaT)
-            arr_occupancy_hourly = np.apply_along_axis(f, 1, arr_occupancy)
-        else:
-            arr_deltaT_hourly = self.arr_deltaT
-            arr_occupancy_hourly = arr_occupancy
-        
-        return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
+        arr_deltaT = np_round_half_up(self.arr_deltaT)
+        return criterion_time_of_exceedance(arr_deltaT, arr_occupancy, self.factor)
 
     def run_criterion_two(self, arr_occupancy):
         """Runs criterion two.
@@ -167,22 +163,13 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
-        # # We only consider analysed rooms for TM52
-        # li_room_ids_sorted = []
-        # for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
-        #     if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
-        #         li_room_ids_sorted.append(room_id)
-
-        # self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
-        # self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
-
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
         self.di_criteria = {
             "Criterion 1": {
                 "Criterion 1 (Pass/Fail)": arr_criterion_one_bool,
-                "Criterion 1 (% Hours Delta T >= 1K)": arr_criterion_one_percent.round(2),
+                "Criterion 1 (% Time Delta T >= 1K)": arr_criterion_one_percent.round(2),
                 },
             "Criterion 2": {
                 "Criterion 2 (Pass/Fail)": arr_criterion_two_bool,
@@ -224,6 +211,7 @@ class Tm52CalcWizard:
             ("Type of Analysis", 'CIBSE TM52 Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
             ("Job Number", job_no),
+            ("Reporting Interval", "{0} minutes".format(60/self.factor)),
             ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
@@ -245,7 +233,7 @@ class Tm52CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Criterion 1 (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
+            "Criterion 1 (% Time Delta T >= 1K)": "The percentage of occupied time where delta T equals or exceeds the threshold (1 kelvin) over the total occupied time.",
             "Criterion 2 (Max Daily Weight)": "The maximum daily weight taken from the year.",
             "Criterion 3 (Max Delta T)": "The maximum delta T taken from the year.",
         }

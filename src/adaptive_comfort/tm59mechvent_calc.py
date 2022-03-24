@@ -46,6 +46,9 @@ import pandas as pd
 import datetime
 from collections import OrderedDict
 
+import sys
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.equations import np_calc_op_temp
 from adaptive_comfort.utils import create_paths, fromfile, create_df_from_criterion
@@ -62,6 +65,7 @@ class Tm59MechVentCalcWizard:
             fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        self.factor = int(inputs.arr_air_temp.shape[1] / 8760)  # Find factor to hourly time-step array 
         self.op_temp(inputs)
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
@@ -102,7 +106,7 @@ class Tm59MechVentCalcWizard:
         self.di_criteria = {
             "Fixed Temp Criterion": {
                 "Fixed Temp Criterion (Pass/Fail)": arr_criterion_one_bool,
-                "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": arr_criterion_one_percent.round(2),
+                "Fixed Temp Criterion (% Time Operative Temp > 26 Deg. Celsius)": arr_criterion_one_percent.round(2),
                 },
         }
 
@@ -139,6 +143,7 @@ class Tm59MechVentCalcWizard:
             ("Type of Analysis", 'CIBSE TM59 Mechanically Ventilated Assessment of overheating risk'),
             ("Weather File", inputs.di_aps_info['weather_file_path']),
             ("Job Number", job_no),
+            ("Reporting Interval", "{0} minutes".format(60/self.factor)),
             ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
             ("Analysed Air Speeds", self.li_air_speeds_str),
             ("Weather File Year", str(inputs.di_weather_file_info["year"])),
@@ -160,7 +165,7 @@ class Tm59MechVentCalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": "The percentage of time where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual time.",
+            "Fixed Temp Criterion (% Time Operative Temp > 26 Deg. Celsius)": "The percentage of time where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual time.",
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
