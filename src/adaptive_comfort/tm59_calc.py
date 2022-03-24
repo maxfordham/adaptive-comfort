@@ -74,7 +74,7 @@ class Tm59CalcWizard:
             fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
-        print(self.factor)
+        self.factor = int(inputs.arr_dry_bulb_temp / 8760)  # Find factor to hourly time-step array 
         self.bedroom_ids(inputs)
         self.op_temp(inputs)
         self.max_adaptive_temp(inputs)
@@ -82,10 +82,6 @@ class Tm59CalcWizard:
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
         self.to_excel(inputs, fdir_results, on_linux)
-
-    @property
-    def factor(self, inputs):
-        return int(inputs.arr_dry_bulb_temp / 8760)  # Find factor to hourly time-step array 
 
     def bedroom_ids(self, inputs):
         """Obtains the room IDs for the bedrooms by seeing which rooms are occupied between the hours of 10pm and 7am.
