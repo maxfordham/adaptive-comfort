@@ -172,7 +172,7 @@ class Tm59CalcWizard:
         bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
         arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index
         factor = int(arr_op_temp_v_bedrooms.shape[2]/8760)  # Find factor to hourly time-step array            
-        return criterion_bedroom_comfort(arr_op_temp_v_bedrooms)
+        return criterion_bedroom_comfort(arr_op_temp_v_bedrooms, factor)
 
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
