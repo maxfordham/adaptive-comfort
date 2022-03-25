@@ -283,31 +283,38 @@ class Tm59CalcWizard:
             "df": self.create_df_criterion_definitions(),
         }
 
+        li_columns_to_map = [
+            "Criterion A (Pass/Fail)",
+            "Criterion B (Pass/Fail)",
+            "TM59 (Pass/Fail)"
+        ]
+        di_bool_map = {True: "Fail", False: "Pass"}
+        li_columns_sorted = [
+            'Room Name', 
+            'Vulnerable Occupancy', 
+            'Criterion A (Pass/Fail)',
+            'Criterion A (% Hours Delta T >= 1K)', 
+            'Criterion B (Pass/Fail)',
+            'Criterion B (% Hours Operative T > 26 Deg. C)', 
+            'Criterion B (Hours Operative T > 26 Deg. C)',
+            'TM59 (Pass/Fail)'
+        ]
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_all_criteria = pd.merge(self.di_data_frame_criteria["Criterion A"][speed], self.di_data_frame_criteria["Criterion B"][speed], on=["Room ID", "Room Name"], how="left")
-
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through Criterion B, so we assume that the room passes.
             df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
             
             # Map true and false to fail and pass respectively
-            li_columns_to_map = [
-                "Criterion A (Pass/Fail)",
-                "Criterion B (Pass/Fail)",
-                "TM59 (Pass/Fail)"
-            ]
-            di_bool_map = {True: "Fail", False: "Pass"}
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
             # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
             df_all_criteria.insert(loc=2, column="Vulnerable Occupancy", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
-
             df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
-
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
-                "df": df_all_criteria,
+                "df": df_all_criteria[li_columns_sorted],
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
 

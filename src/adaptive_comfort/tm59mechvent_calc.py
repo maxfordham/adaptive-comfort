@@ -188,22 +188,23 @@ class Tm59MechVentCalcWizard:
         }
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
+        li_columns_to_map = ["Fixed Temp Criterion (Pass/Fail)",]
+        li_columns_sorted = [
+                'Room Name',
+                'Fixed Temp Criterion (Pass/Fail)',
+                'Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)',
+            ]
+        di_bool_map = {True: "Fail", False: "Pass"}
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             df_all_criteria = self.di_data_frame_criteria["Fixed Temp Criterion"][speed]
-          
             # Map true and false to fail and pass respectively
-            li_columns_to_map = [
-                "Fixed Temp Criterion (Pass/Fail)",
-            ]
-            di_bool_map = {True: "Fail", False: "Pass"}
             for column in li_columns_to_map:
                 df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
 
             df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
-
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
-                "df": df_all_criteria,
+                "df": df_all_criteria[li_columns_sorted],
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
 
