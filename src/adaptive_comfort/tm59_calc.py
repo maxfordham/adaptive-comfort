@@ -125,6 +125,7 @@ class Tm59CalcWizard:
             n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
             self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
+            self.arr_max_adaptive_temp_vulnerable = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp_vulnerable)
 
     def deltaT(self, inputs):
         """Calculates the temperature difference between the operative temperature and the maximum
