@@ -36,10 +36,10 @@ Process
 
     4. Run through the TM59 criteria
         Criterion one 
-            For living rooms, kitchens, and bedrooms: No room can have delta T equal or exceed the threshold (1 kelvin) during occupied time between May and September inclusive
-            for more than 3 percent of the total occupied time.
+            For living rooms, kitchens, and bedrooms: No room can have delta T equal or exceed the threshold (1 kelvin) during occupied hours between May and September inclusive
+            for more than 3 percent of the total occupied hours.
         Criterion two
-            For bedrooms only: The operative temperature between 10pm and 7am must not exceed 26 degrees celsius for more than 1% of annual time.
+            For bedrooms only: The operative temperature between 10pm and 7am must not exceed 26 degrees celsius for more than 1% of annual hours.
 
     5. Merge Data Frames
         Merges the data frames for project information, criterion percentage definitions, and the results for each 
@@ -84,7 +84,7 @@ class Tm59CalcWizard:
         self.to_excel(inputs, fdir_results, on_linux)
 
     def bedroom_ids(self, inputs):
-        """Obtains the room IDs for the bedrooms by seeing which rooms are occupied between the time of 10pm and 7am.
+        """Obtains the room IDs for the bedrooms by seeing which rooms are occupied between the hours of 10pm and 7am.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
@@ -180,18 +180,18 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_a_bool, arr_criterion_a_percent = self.run_criterion_a(inputs.arr_occupancy)
-        arr_criterion_b_bool, arr_criterion_b_percent, arr_criterion_b_value = self.run_criterion_b()
+        self.arr_criterion_a_bool, self.arr_criterion_a_percent = self.run_criterion_a(inputs.arr_occupancy)
+        self.arr_criterion_b_bool, self.arr_criterion_b_percent, self.arr_criterion_b_value = self.run_criterion_b()
 
         self.di_criteria = {
             "Criterion A": {
-                "Criterion A (Pass/Fail)": arr_criterion_a_bool,
-                "Criterion A (% Time Delta T >= 1K)": arr_criterion_a_percent.round(2),
+                "Criterion A (Pass/Fail)": self.arr_criterion_a_bool,
+                "Criterion A (% Hours Delta T >= 1K)": self.arr_criterion_a_percent.round(2),
                 },
             "Criterion B": {
-                "Criterion B (Pass/Fail)": arr_criterion_b_bool,
-                "Criterion B (Time Operative T > 26 Deg. C)": arr_criterion_b_value,
-                "Criterion B (% Time Operative T > 26 Deg. C)": arr_criterion_b_percent.round(2),
+                "Criterion B (Pass/Fail)": self.arr_criterion_b_bool,
+                "Criterion B (Hours Operative T > 26 Deg. C)": self.arr_criterion_b_value,
+                "Criterion B (% Hours Operative T > 26 Deg. C)": self.arr_criterion_b_percent.round(2),
                 },
         }
 
@@ -256,9 +256,9 @@ class Tm59CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Criterion A (% Time Delta T >= 1K)": "The percentage of occupied time where delta T equals or exceeds the threshold (1 kelvin) over the total occupied time.",
-            "Criterion B (% Time Operative T > 26 Deg. C)": "The percentage of occupied time in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied time between 10pm and 7am.",
-            "Criterion B (Time Operative T > 26 Deg. C)": "Time intervals where the operative temperature is strictly greater than 26 Deg. C." 
+            "Criterion A (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
+            "Criterion B (% Hours Operative T > 26 Deg. C)": "The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am.",
+            "Criterion B (Hours Operative T > 26 Deg. C)": "Number of hours where the operative temperature is strictly greater than 26 Deg. C." 
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})

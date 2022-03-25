@@ -28,8 +28,8 @@ Process
 
     2. Run through the TM59 Mechanically Ventilated criteria
         Criterion one 
-            No room can have the operative temperature exceed 26 degrees celsius during occupied time for more than 3 percent of the 
-            total annual occupied time.
+            No room can have the operative temperature exceed 26 degrees celsius during occupied hours for more than 3 percent of the 
+            total annual occupied hours.
 
     3. Merge Data Frames
         Merges the data frames for project information, criterion percentage definitions, and the results for each 
@@ -98,12 +98,12 @@ class Tm59MechVentCalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
+        self.arr_criterion_one_bool, self.arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
 
         self.di_criteria = {
             "Fixed Temp Criterion": {
-                "Fixed Temp Criterion (Pass/Fail)": arr_criterion_one_bool,
-                "Fixed Temp Criterion (% Time Operative Temp > 26 Deg. Celsius)": arr_criterion_one_percent.round(2),
+                "Fixed Temp Criterion (Pass/Fail)": self.arr_criterion_one_bool,
+                "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": self.arr_criterion_one_percent.round(2),
                 },
         }
 
@@ -162,7 +162,7 @@ class Tm59MechVentCalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Fixed Temp Criterion (% Time Operative Temp > 26 Deg. Celsius)": "The percentage of time where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual time.",
+            "Fixed Temp Criterion (% Hours Operative Temp > 26 Deg. Celsius)": "The percentage of hours where the operative temperature exceeds the threshold (26 degrees celsius) over the total annual hours.",
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})

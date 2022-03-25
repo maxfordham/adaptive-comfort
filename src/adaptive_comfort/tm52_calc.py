@@ -36,11 +36,11 @@ Process
 
     4. Run through the TM52 criteria
         Criterion one 
-            No room can have delta T equal or exceed the threshold (1 kelvin) during occupied time for more than 3 percent of the 
-            total occupied time.
+            No room can have delta T equal or exceed the threshold (1 kelvin) during occupied hours for more than 3 percent of the 
+            total occupied hours.
         Criterion two
             No room can have a daily weight greater than the threshold (6) where the daily weight is calculated from the reporting intervals
-            within occupied time.
+            within occupied hours.
         Criterion three 
             No room, at any point, can have a reading where delta T exceeds the threshold (4 kelvin).
 
@@ -166,7 +166,7 @@ class Tm52CalcWizard:
         self.di_criteria = {
             "Criterion 1": {
                 "Criterion 1 (Pass/Fail)": self.arr_criterion_one_bool,
-                "Criterion 1 (% Time Delta T >= 1K)": self.arr_criterion_one_percent.round(2),
+                "Criterion 1 (% Hours Delta T >= 1K)": self.arr_criterion_one_percent.round(2),
                 },
             "Criterion 2": {
                 "Criterion 2 (Pass/Fail)": self.arr_criterion_two_bool,
@@ -230,7 +230,7 @@ class Tm52CalcWizard:
             pandas.DataFrame: Data frame of the criterion percentage definitions.
         """
         di_criterion_defs = {
-            "Criterion 1 (% Time Delta T >= 1K)": "The percentage of occupied time where delta T equals or exceeds the threshold (1 kelvin) over the total occupied time.",
+            "Criterion 1 (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
             "Criterion 2 (Max Daily Weight)": "The maximum daily weight taken from the year.",
             "Criterion 3 (Max Delta T)": "The maximum delta T taken from the year.",
         }
