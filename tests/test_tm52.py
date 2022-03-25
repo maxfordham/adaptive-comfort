@@ -6,8 +6,8 @@ from collections import OrderedDict
 from adaptive_comfort.xlsx_templater import to_excel
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm52_calc import Tm52CalcWizard
-from .constants import DIR_TESTOUTPUTS, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, arr_max_adaptive_temp, \
-    arr_running_mean_temp, arr_operative_temp
+from .constants import DIR_TESTOUTPUTS, DIR_TESTJOB1_TM52, FPTH_IES_TESTJOB1_V_0_1, DIR_OP_TEMP_VISTA, \
+    arr_max_adaptive_temp, arr_running_mean_temp
     
 
 def read_ies_txt(fpth):
@@ -50,9 +50,9 @@ class TestCheckResults:
         df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
 
         # Mapping mf results to ies results.
-        chararr_one = np.char.array(np.where(df_mf_v_0_1["Criterion 1 (Pass/Fail)"]=="Fail", "1", ""))
-        chararr_two = np.char.array(np.where(df_mf_v_0_1["Criterion 2 (Pass/Fail)"]=="Fail", "2", ""))
-        chararr_three = np.char.array(np.where(df_mf_v_0_1["Criterion 3 (Pass/Fail)"]=="Fail", "3", ""))
+        chararr_one = np.char.array(np.where(self.tm52_calc.arr_criterion_one_bool[0]==1, "1", ""))
+        chararr_two = np.char.array(np.where(self.tm52_calc.arr_criterion_two_bool[0]==1, "2", ""))
+        chararr_three = np.char.array(np.where(self.tm52_calc.arr_criterion_three_bool[0]==1, "3", ""))
 
         li_criteria_failing = []
         for i, j, k in zip(chararr_one, chararr_two, chararr_three):
@@ -95,14 +95,17 @@ class TestCheckResults:
             "Criterion 1": {
                 "mf_name": "Criterion 1 (% Time Delta T >= 1K)",
                 "ies_name": "Criteria 1 (%Hrs Top-Tmax>=1K)",
+                "data": self.tm52_calc.arr_criterion_one_percent[0].round(1),
             },
             "Criterion 2": {
                 "mf_name": "Criterion 2 (Max Daily Weight)",
                 "ies_name": "Criteria 2 (Max. Daily Deg.Hrs)",
+                "data": self.tm52_calc.arr_criterion_two_max[0],
             },
             "Criterion 3": {
                 "mf_name": "Criterion 3 (Max Delta T)",
                 "ies_name": "Criteria 3 (Max. DeltaT)",
+                "data": self.tm52_calc.arr_criterion_three_max[0],
             },
         }
 
@@ -110,7 +113,7 @@ class TestCheckResults:
         li_criterion_rel_change = []
         li_criteria_to_excel = [di_criterion_to_excel]
         for criterion, di_name in di_names.items():
-            criterion_abs_change = (df_mf_v_0_1[di_name["mf_name"]] - df_ies_v_0_1[di_name["ies_name"]])
+            criterion_abs_change = (di_name["data"] - df_ies_v_0_1[di_name["ies_name"]])
             criterion_rel_change = (criterion_abs_change / (df_ies_v_0_1[di_name["ies_name"]])) * 100            
             li_criterion_abs_change.append(criterion_abs_change)
             li_criterion_rel_change.append(criterion_rel_change)
@@ -118,7 +121,7 @@ class TestCheckResults:
             di_criterion = OrderedDict([
                 ("Room Name", self.tm52_calc.arr_sorted_room_names),
                 ("IES Results", df_ies_v_0_1[di_name["ies_name"]]),
-                ("MF Results", df_mf_v_0_1[di_name["mf_name"]]),
+                ("MF Results", di_name["data"]),
                 ("{0} Absolute Change".format(criterion), criterion_abs_change),
                 ("{0} Relative Change (%)".format(criterion), criterion_rel_change)
             ])
@@ -187,34 +190,28 @@ class TestCheckResults:
 
     def test_operative_temp(self): 
         """Compares the operative temperature (with air speed = 0.1m/s) from IES with the one calculated from the MF script
-        for each room.
+        for one room.
         """
-        di_op_temp = arr_operative_temp.tolist()
-        li_df_concat = []
-        for i, j in enumerate(sorted(di_op_temp.items())):
-            arr_op_temp = j[1]
-            ies_results = arr_op_temp.astype("float64").round(3) 
-            mf_results = self.tm52_calc.arr_op_temp_v[0][i].round(3)
-            abs_change = (self.tm52_calc.arr_op_temp_v[0][i].round(3) - arr_op_temp.astype("float64").round(3))
-            rel_change = (abs_change / (arr_op_temp.astype("float64").round(3))) * 100
-            di = OrderedDict([
-                ("IES Results", ies_results),
-                ("MF Results", mf_results),
-                ("Absolute Change", abs_change),
-                ("Relative Change (%)", rel_change),
-            ])
-            df = pd.DataFrame.from_dict(di)
-            df.columns = pd.MultiIndex.from_product([[str(j[0])], df.columns[df.columns != '']])
-            df[("-", "-")] = np.nan  # Add empty column to split between rooms
-            li_df_concat.append(df)
+        df_op_temp = pd.read_csv(str(DIR_OP_TEMP_VISTA), delimiter="\t", encoding='latin1', header=2)
+        arr_op_temp_vista = np.array(df_op_temp.iloc[:, 2])
 
-        df_concat = pd.concat(li_df_concat, axis=1)  # Concatenate all data frames
-        df_concat.to_excel(
+        ies_results = arr_op_temp_vista
+        mf_results = self.tm52_calc.arr_op_temp_v[0][0].round(2)
+        abs_change = mf_results - ies_results
+        rel_change = (abs_change / ies_results) * 100
+        di = OrderedDict([
+            ("IES Results", ies_results),
+            ("MF Results", mf_results),
+            ("Absolute Change", abs_change),
+            ("Relative Change (%)", rel_change),
+        ])
+        df = pd.DataFrame.from_dict(di)
+
+        df.to_excel(
             str(DIR_TESTOUTPUTS / "test_operative_temp.xlsx"), 
             sheet_name="Operative Temp, Air Speed 0.1", 
         )
-        abs_change = (self.tm52_calc.arr_op_temp_v[0].round(3) - np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
-        rel_change = abs_change / (np.array([j for i, j in sorted(di_op_temp.items())]).round(3))
+
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
@@ -228,6 +225,6 @@ if __name__ == "__main__":
     df_ies_v_0_1 = read_ies_txt(FPTH_IES_TESTJOB1_V_0_1)
     test_check_results = TestCheckResults()
     test_check_results.test_all_criteria()
-    test_check_results.test_operative_temp()
-    test_check_results.test_daily_running_mean_temp()
-    test_check_results.test_max_adaptive_temp()
+    # test_check_results.test_operative_temp()
+    # test_check_results.test_daily_running_mean_temp()
+    # test_check_results.test_max_adaptive_temp()

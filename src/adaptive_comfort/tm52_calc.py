@@ -156,25 +156,25 @@ class Tm52CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_one_bool, arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
-        arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
-        arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
+        self.arr_criterion_one_bool, self.arr_criterion_one_percent = self.run_criterion_one(inputs.arr_occupancy)
+        self.arr_criterion_two_bool, self.arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
+        self.arr_criterion_three_bool, self.arr_criterion_three_max = self.run_criterion_three()
 
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
         self.di_criteria = {
             "Criterion 1": {
-                "Criterion 1 (Pass/Fail)": arr_criterion_one_bool,
-                "Criterion 1 (% Time Delta T >= 1K)": arr_criterion_one_percent.round(2),
+                "Criterion 1 (Pass/Fail)": self.arr_criterion_one_bool,
+                "Criterion 1 (% Time Delta T >= 1K)": self.arr_criterion_one_percent.round(2),
                 },
             "Criterion 2": {
-                "Criterion 2 (Pass/Fail)": arr_criterion_two_bool,
-                "Criterion 2 (Max Daily Weight)": arr_criterion_two_max,
+                "Criterion 2 (Pass/Fail)": self.arr_criterion_two_bool,
+                "Criterion 2 (Max Daily Weight)": self.arr_criterion_two_max,
                 },
             "Criterion 3": {
-                "Criterion 3 (Pass/Fail)": arr_criterion_three_bool,
-                "Criterion 3 (Max Delta T)": arr_criterion_three_max,
+                "Criterion 3 (Pass/Fail)": self.arr_criterion_three_bool,
+                "Criterion 3 (Max Delta T)": self.arr_criterion_three_max,
             }
         }
 
