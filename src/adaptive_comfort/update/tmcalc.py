@@ -7,7 +7,7 @@ from adaptive_comfort.constants import arr_air_speed
 
 
 class TmCalc:
-    def __init__(self, inputs, include_vulnerable=False):
+    def __init__(self, inputs):
         """Calculates the operative temperature, maximum adaptive temperature, and delta T for each air speed
         and produces the results in an excel spreadsheet. 
 
@@ -69,17 +69,13 @@ class TmCalc:
                     li_vulnerable_idx.append(idx)
 
             if li_vulnerable_idx:  # If vulnerable room group assigned to any rooms then edit max_adaptive_temp
-                # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
+                # Repeating arr_max_acceptable_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
                 # is now room specific depending on the group the room belongs to.
-                arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
-                arr_max_adaptive_temp[:, li_vulnerable_idx, :] = np.repeat(self.arr_max_adaptive_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
+                arr_max_acceptable_temp = np.repeat(self.arr_max_acceptable_temp, len(inputs.arr_room_ids_sorted), axis=1)
+                arr_max_acceptable_temp[:, li_vulnerable_idx, :] = np.repeat(self.arr_max_acceptable_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
             else:
-                arr_max_adaptive_temp = self.arr_max_adaptive_temp
+                arr_max_acceptable_temp = self.arr_max_acceptable_temp
         else:
-            arr_max_adaptive_temp = self.arr_max_adaptive_temp
+            arr_max_acceptable_temp = self.arr_max_acceptable_temp
 
-        self.arr_deltaT = deltaT(self.arr_op_temp_v, arr_max_adaptive_temp)
-
-    def air_speed(self):
-        self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
+        self.arr_deltaT = deltaT(self.arr_op_temp_v, arr_max_acceptable_temp)

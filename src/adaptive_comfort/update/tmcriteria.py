@@ -11,12 +11,16 @@ from adaptive_comfort.utils import np_round_half_up, repeat_every_element_n_time
 from adaptive_comfort.constants import arr_air_speed
 from adaptive_comfort.criteria_testing import criterion_time_of_exceedance, criterion_daily_weighted_exceedance, criterion_upper_limit_temperature, \
     criterion_bedroom_comfort, criterion_tm59_mechvent
+from adaptive_comfort.update.constants import di_bool_map
 
-def __init__(self, inputs):
+
+class TmPreProcess:
+    def __init__(self, inputs):
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
-class Tm52Criteria:
+
+class Tm52Criteria(TmPreProcess):
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
 
@@ -59,7 +63,7 @@ class Tm52Criteria:
                 di_criterion
             )
 
-class Tm59Criteria:
+class Tm59Criteria(TmPreProcess):
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
 
@@ -105,7 +109,7 @@ class Tm59Criteria:
                 di_criterion
             )
 
-class Tm59MechVentCriteria:
+class Tm59MechVentCriteria(TmPreProcess):
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
 
@@ -179,7 +183,7 @@ class TmDataFrames:
         df = df.rename(columns={0: "Definition"})
         return df.sort_index()
 
-    def merge_dfs(self, inputs, di_data_frame_criteria, li_columns_to_map, li_columns_sorted):
+    def merge_dfs(self, inputs, di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted):
         """Merge the project information, criterion percentage definitions, and criteria data frames within a list
         which will then be passed onto the to_excel method.
 
@@ -195,17 +199,21 @@ class TmDataFrames:
         # Obtaining criterion percentage defintions
         di_criterion_defs = {
             "sheet_name": "Criterion Definitions",
-            "df": self.create_df_criterion_definitions(),
+            "df": self.create_df_criterion_definitions(di_criterion_defs),
         }
         
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
             li_dfs = []
-            for di_criterion in di_data_frame_criteria:
+            for criterion, di_criterion in di_data_frame_criteria.items():
                 df_criterion = di_criterion[speed]
                 li_dfs.append(df_criterion)
             
-            df_all_criteria = pd.DataFrame().join(li_dfs, on=["Room ID", "Room Name"], how="outer")
+            df_all_criteria = li_dfs[0]
+            for df_ in li_dfs[1:]:
+                df_all_criteria = df_all_criteria.merge(df_, on=["Room ID", "Room Name"], how='outer')
+            df_criterion = df_criterion.set_index("Room ID")
+
             # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
             df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
 

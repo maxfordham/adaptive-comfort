@@ -1,3 +1,7 @@
+import sys
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).parents[2]))
+
 from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.update.tmcalc import TmCalc
 from adaptive_comfort.update.tmcriteria import Tm52Criteria, TmDataFrames
@@ -5,7 +9,7 @@ from adaptive_comfort.update.constants import di_tm52_criterion_defs, li_tm52_co
 
 
 class Tm52CalcWizard(TmCalc, Tm52Criteria, TmDataFrames):
-    def __init__(self, inputs, di_data_frame_criteria, li_columns_to_map, li_columns_sorted, fdir_results=None, on_linux=True):
+    def __init__(self, inputs, di_criterion_defs, li_columns_to_map, li_columns_sorted, fdir_results=None, on_linux=True):
         """Calculates the operative temperature, maximum acceptable temperature, and delta T for each air speed
         and produces the results in an excel spreadsheet. 
 
@@ -17,9 +21,9 @@ class Tm52CalcWizard(TmCalc, Tm52Criteria, TmDataFrames):
         self.factor = int(inputs.arr_air_temp.shape[1] / 8760)  # Find factor to hourly time-step array 
         self.op_temp(inputs)
         self.max_acceptable_temp(inputs)
-        self.deltaT()
+        self.deltaT(inputs)
         self.run_criteria(inputs)
-        self.merge_dfs(inputs, di_data_frame_criteria, li_columns_to_map, li_columns_sorted)
+        self.merge_dfs(inputs, self.di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted)
         self.to_excel(inputs, fdir_results, on_linux)
 
 
@@ -29,7 +33,7 @@ if __name__ == "__main__":
     tm52_input_data = fromfile(paths)
     Tm52CalcWizard(
         inputs=tm52_input_data, 
-        di_data_frame_criteria=di_tm52_criterion_defs,
+        di_criterion_defs=di_tm52_criterion_defs,
         li_columns_to_map=li_tm52_columns_to_map,
         li_columns_sorted=li_tm52_columns_sorted
         )
