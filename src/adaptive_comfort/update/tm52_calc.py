@@ -18,13 +18,14 @@ class Tm52CalcWizard(TmCalc, Tm52Criteria, TmDataFrames):
             fdir_results (Path): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
-        self.factor = int(inputs.arr_air_temp.shape[1] / 8760)  # Find factor to hourly time-step array 
+        super().__init__(inputs)
+        analysis_name = "TM52"
         self.op_temp(inputs)
         self.max_acceptable_temp(inputs)
         self.deltaT(inputs)
         self.run_criteria(inputs)
-        self.merge_dfs(inputs, self.di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted)
-        self.to_excel(inputs, fdir_results, on_linux)
+        self.merge_dfs(inputs, analysis_name, self.di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted)
+        self.to_excel(inputs, analysis_name, fdir_results, on_linux)
 
 
 if __name__ == "__main__":

@@ -21,16 +21,15 @@ class TmPreProcess:
 
 
 class Tm52Criteria(TmPreProcess):
+    def __init__(self, inputs):
+        super().__init__(inputs)
+
     def run_criteria(self, inputs):
         """Runs all the criteria and collates them into a dictionary of data frames.
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
-
-        self.analysis_name = "TM52"
         arr_deltaT = np_round_half_up(self.arr_deltaT)
         self.arr_criterion_one_bool, self.arr_criterion_one_percent = criterion_time_of_exceedance(arr_deltaT, inputs.arr_occupancy, self.factor)
         self.arr_criterion_two_bool, self.arr_criterion_two_max = criterion_daily_weighted_exceedance(self.arr_deltaT, inputs.arr_occupancy)
@@ -70,7 +69,6 @@ class Tm59Criteria(TmPreProcess):
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        self.analysis_name = "TM59"
         arr_deltaT = np_round_half_up(self.arr_deltaT)
         bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
         arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index           
@@ -183,7 +181,7 @@ class TmDataFrames:
         df = df.rename(columns={0: "Definition"})
         return df.sort_index()
 
-    def merge_dfs(self, inputs, di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted):
+    def merge_dfs(self, inputs, analysis_name, di_data_frame_criteria, di_criterion_defs, li_columns_to_map, li_columns_sorted):
         """Merge the project information, criterion percentage definitions, and criteria data frames within a list
         which will then be passed onto the to_excel method.
 
@@ -215,7 +213,7 @@ class TmDataFrames:
             df_criterion = df_criterion.set_index("Room ID")
 
             # If a room fails any 2 of the 3 criteria then it is classed as a fail overall
-            df_all_criteria["TM52 (Pass/Fail)"] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
+            df_all_criteria["{0} (Pass/Fail)".format(analysis_name)] = df_all_criteria.select_dtypes(include=['bool']).sum(axis=1) >= 2  # Sum only boolean columns (pass/fail columns)
 
             # Map true and false to fail and pass respectively
             for column in li_columns_to_map:
@@ -228,7 +226,7 @@ class TmDataFrames:
             }
             self.li_all_criteria_data_frames.append(di_all_criteria_data_frame)
     
-    def to_excel(self, inputs, fdir_results, on_linux=True):
+    def to_excel(self, inputs, analysis_name, fdir_results, on_linux=True):
         """Output data frames to excel spreadsheet.
 
         Args:
@@ -236,18 +234,19 @@ class TmDataFrames:
             fdir_results (Path): Override project path.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+
         if fdir_results is None:
-            fdir_tm52 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm52"
+            fdir_tm52 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / analysis_name.lower()
         else:
             fdir_tm52 = fdir_results
-        file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
+        file_name = "{0}__{1}.xlsx".format(analysis_name, inputs.di_project_info['project_name'])
         fpth_results = fdir_tm52 / file_name
         if on_linux:
             output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
             output_path = str(fpth_results)
         to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
-        print("TM52 Calculation Complete.")
+        print("{0} Calculation Complete.".format(analysis_name))
         print("Results File Path: {0}".format(output_path))
 
 

@@ -1,5 +1,6 @@
 di_bool_map = {True: "Fail", False: "Pass"}
 
+# TM52 constants
 li_tm52_columns_to_map = [
     "Criterion 1 (Pass/Fail)",
     "Criterion 2 (Pass/Fail)",
@@ -21,3 +22,5 @@ di_tm52_criterion_defs = {
     "Criterion 2 (Max Daily Weight)": "The maximum daily weight taken from the year.",
     "Criterion 3 (Max Delta T)": "The maximum delta T taken from the year.",
 }
+
+# TM59 constants
