@@ -8,4 +8,5 @@ chapters:
 - file: TM52.md
 - file: TM59.md
 - file: tests.ipynb
+- file: releases.md
 - file: api.rst

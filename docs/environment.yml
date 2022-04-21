@@ -22,3 +22,6 @@ dependencies:
   - sphinx-book-theme # for docs
   - sphinx-autoapi
   - sphinxcontrib-mermaid
+  - pip
+  - pip:
+    - sphinx_github_changelog

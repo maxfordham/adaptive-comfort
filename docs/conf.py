@@ -3,6 +3,9 @@
 # If you wish to continue using _config.yml, make edits to that file and
 # re-generate this one.
 ###############################################################################
+import os
+
+
 author = 'mfcode'
 autoapi_add_toctree_entry = True
 autoapi_dirs = ['../src']
@@ -16,7 +19,7 @@ execution_allow_errors = False
 execution_excludepatterns = []
 execution_in_temp = False
 execution_timeout = 30
-extensions = ['sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_panels', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'sphinx.ext.todo', 'sphinx.ext.autosummary', 'autoapi.extension', 'sphinxcontrib.mermaid', 'sphinxcontrib.bibtex', 'sphinx_jupyterbook_latex']
+extensions = ['sphinx_togglebutton', 'sphinx_copybutton', 'myst_nb', 'jupyter_book', 'sphinx_thebe', 'sphinx_comments', 'sphinx_external_toc', 'sphinx.ext.intersphinx', 'sphinx_panels', 'sphinx_book_theme', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode', 'sphinx.ext.todo', 'sphinx.ext.autosummary', 'autoapi.extension', 'sphinxcontrib.mermaid', 'sphinx_github_changelog', 'sphinxcontrib.bibtex', 'sphinx_jupyterbook_latex']
 external_toc_exclude_missing = False
 external_toc_path = '_toc.yml'
 html_baseurl = ''
@@ -47,6 +50,7 @@ nb_output_stderr = 'show'
 numfig = True
 panels_add_bootstrap_css = False
 pygments_style = 'sphinx'
+sphinx_github_changelog_token = os.environ.get("GITHUB_TOKEN_CHANGELOG")
 suppress_warnings = ['myst.domains']
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
