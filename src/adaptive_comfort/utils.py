@@ -266,6 +266,23 @@ def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_
     return di_data_frames_criterion
 
 
+def jobno_fromdir(dir):
+    '''
+    returns the job number from a given file directory
+
+    Name: 
+
+    Args: 
+        dir (filepath): file-directory
+    Returns: 
+        job associated to file-directory
+    '''
+    string = dir
+    string = string[4:]
+    job_no=string[:4]
+    return job_no
+
+
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1_TM52
     paths = create_paths(DIR_TESTJOB1_TM52)
