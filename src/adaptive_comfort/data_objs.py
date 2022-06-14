@@ -1,6 +1,7 @@
 """Class objects used to store the data in a structured manner so the data can be easily accessed in the class wizards.
 """
 
+
 class Tm52InputData(object):
     di_project_info = None
     di_aps_info = None
@@ -12,6 +13,7 @@ class Tm52InputData(object):
     arr_mean_radiant_temp = None
     arr_occupancy = None
     arr_dry_bulb_temp = None
+
 
 class Tm52InputPaths(object):
     fpth_project_info = None
@@ -25,8 +27,9 @@ class Tm52InputPaths(object):
     fpth_occupancy = None
     fpth_dry_bulb_temp = None
 
+
 class Tm52ExtraData(object):
     arr_running_mean_temp = None
     arr_max_adaptive_temp = None
     arr_operative_temp = None
-    
+
