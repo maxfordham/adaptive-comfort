@@ -58,11 +58,27 @@ import datetime
 from collections import OrderedDict
 
 from adaptive_comfort.xlsx_templater import to_excel
-from adaptive_comfort.equations import deltaT, calculate_running_mean_temp_hourly, np_calc_op_temp, np_calculate_max_acceptable_temp
-from adaptive_comfort.utils import repeat_every_element_n_times, create_paths, fromfile, mean_every_n_elements, filter_bedroom_comfort_time, np_round_half_up, \
-    create_df_from_criterion
+from adaptive_comfort.equations import (
+    deltaT,
+    calculate_running_mean_temp_hourly,
+    np_calc_op_temp,
+    np_calculate_max_acceptable_temp,
+)
+from adaptive_comfort.utils import (
+    repeat_every_element_n_times,
+    create_paths,
+    fromfile,
+    mean_every_n_elements,
+    filter_bedroom_comfort_time,
+    np_round_half_up,
+    create_df_from_criterion,
+)
 from adaptive_comfort.constants import arr_air_speed
-from adaptive_comfort.criteria_testing import criterion_hours_of_exceedance, criterion_bedroom_comfort
+from adaptive_comfort.criteria_testing import (
+    criterion_hours_of_exceedance,
+    criterion_bedroom_comfort,
+)
+
 
 class Tm59CalcWizard:
     def __init__(self, inputs, fdir_results=None, on_linux=True):
@@ -88,9 +104,15 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(inputs.arr_occupancy, axis=1)
-        self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(axis=1, dtype=bool)  # If value is True then NOT a bedroom
-        ma_arr_bedroom_ids = ma.masked_array(inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool)  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
+        arr_occupancy_bedroom_filtered = filter_bedroom_comfort_time(
+            inputs.arr_occupancy, axis=1
+        )
+        self.arr_occupancy_bedroom_bool = (arr_occupancy_bedroom_filtered == 0).sum(
+            axis=1, dtype=bool
+        )  # If value is True then NOT a bedroom
+        ma_arr_bedroom_ids = ma.masked_array(
+            inputs.arr_room_ids_sorted, mask=self.arr_occupancy_bedroom_bool
+        )  # Use arr_occupancy_bedroom_bool as a mask to obtain room IDs which are bedrooms. masked_array sets True values to invalid.
         self.arr_bedroom_ids = ma_arr_bedroom_ids.compressed()
 
     def op_temp(self, inputs):
@@ -100,10 +122,8 @@ class Tm59CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
         self.arr_op_temp_v = np_calc_op_temp(
-            inputs.arr_air_temp,
-            arr_air_speed,
-            inputs.arr_mean_radiant_temp
-            )
+            inputs.arr_air_temp, arr_air_speed, inputs.arr_mean_radiant_temp
+        )
 
     def max_adaptive_temp(self, inputs):
         """Calculates the maximum adaptive temperature for each air speed.
@@ -112,18 +132,28 @@ class Tm59CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
 
-        arr_running_mean_temp = calculate_running_mean_temp_hourly(inputs.arr_dry_bulb_temp)
+        arr_running_mean_temp = calculate_running_mean_temp_hourly(
+            inputs.arr_dry_bulb_temp
+        )
         cat_I_temp = 2
-        cat_II_temp = 3  
+        cat_II_temp = 3
 
         # For TM59 calculation use category 2, for rooms used by vulnerable occupants use category 1
-        self.arr_max_adaptive_temp = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_II_temp, arr_air_speed)
-        self.arr_max_adaptive_temp_vulnerable = np_calculate_max_acceptable_temp(arr_running_mean_temp, cat_I_temp, arr_air_speed)
+        self.arr_max_adaptive_temp = np_calculate_max_acceptable_temp(
+            arr_running_mean_temp, cat_II_temp, arr_air_speed
+        )
+        self.arr_max_adaptive_temp_vulnerable = np_calculate_max_acceptable_temp(
+            arr_running_mean_temp, cat_I_temp, arr_air_speed
+        )
 
-        if self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]:  # If max adaptive time step axis does not match operative temp time step then modify.
-            n = int(self.arr_op_temp_v.shape[2]/self.arr_max_adaptive_temp.shape[2])
+        if (
+            self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]
+        ):  # If max adaptive time step axis does not match operative temp time step then modify.
+            n = int(self.arr_op_temp_v.shape[2] / self.arr_max_adaptive_temp.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
-            self.arr_max_adaptive_temp = np.apply_along_axis(f, 2, self.arr_max_adaptive_temp)
+            self.arr_max_adaptive_temp = np.apply_along_axis(
+                f, 2, self.arr_max_adaptive_temp
+            )
 
     def deltaT(self, inputs):
         """Calculates the temperature difference between the operative temperature and the maximum
@@ -138,11 +168,19 @@ class Tm59CalcWizard:
             if room_id in inputs.di_room_ids_groups["TM59_VulnerableRooms"]:
                 li_vulnerable_idx.append(idx)
 
-        if li_vulnerable_idx:  # If vulnerable room group assigned to any rooms then edit max_adaptive_temp
+        if (
+            li_vulnerable_idx
+        ):  # If vulnerable room group assigned to any rooms then edit max_adaptive_temp
             # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
             # is now room specific depending on the group the room belongs to.
-            arr_max_adaptive_temp = np.repeat(self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1)
-            arr_max_adaptive_temp[:, li_vulnerable_idx, :] = np.repeat(self.arr_max_adaptive_temp_vulnerable, len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]), axis=1)
+            arr_max_adaptive_temp = np.repeat(
+                self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1
+            )
+            arr_max_adaptive_temp[:, li_vulnerable_idx, :] = np.repeat(
+                self.arr_max_adaptive_temp_vulnerable,
+                len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]),
+                axis=1,
+            )
         else:
             arr_max_adaptive_temp = self.arr_max_adaptive_temp
 
@@ -159,7 +197,9 @@ class Tm59CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        factor = int(self.arr_deltaT.shape[2]/8760)  # Find factor to convert to hourly time-step array
+        factor = int(
+            self.arr_deltaT.shape[2] / 8760
+        )  # Find factor to convert to hourly time-step array
         if factor > 1:
             f = functools.partial(mean_every_n_elements, n=factor)
             arr_deltaT_hourly = np.apply_along_axis(f, 2, self.arr_deltaT)
@@ -167,7 +207,7 @@ class Tm59CalcWizard:
         else:
             arr_deltaT_hourly = self.arr_deltaT
             arr_occupancy_hourly = arr_occupancy
-        
+
         arr_deltaT_hourly = np_round_half_up(arr_deltaT_hourly)
         return criterion_hours_of_exceedance(arr_deltaT_hourly, arr_occupancy_hourly)
 
@@ -178,16 +218,26 @@ class Tm59CalcWizard:
             tuple: First element contains boolean values where True means exceedance.
                 Second element contains the percentage of exceedance.
         """
-        bedrooms_indices = [i for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool) if bool_ == True]  # Obtain indices where rooms are NOT bedrooms
-        arr_op_temp_v_bedrooms = np.delete(self.arr_op_temp_v, bedrooms_indices, axis=1)  # Remove arrays in "room" axis which are not bedrooms based on their index
+        bedrooms_indices = [
+            i
+            for i, bool_ in enumerate(self.arr_occupancy_bedroom_bool)
+            if bool_ == True
+        ]  # Obtain indices where rooms are NOT bedrooms
+        arr_op_temp_v_bedrooms = np.delete(
+            self.arr_op_temp_v, bedrooms_indices, axis=1
+        )  # Remove arrays in "room" axis which are not bedrooms based on their index
 
-        factor = int(arr_op_temp_v_bedrooms.shape[2]/8760)  # Find factor to convert to hourly time-step array
+        factor = int(
+            arr_op_temp_v_bedrooms.shape[2] / 8760
+        )  # Find factor to convert to hourly time-step array
         if factor > 1:
             f = functools.partial(mean_every_n_elements, n=factor)
-            arr_op_temp_v_bedrooms_hourly = np.apply_along_axis(f, 2, arr_op_temp_v_bedrooms)
+            arr_op_temp_v_bedrooms_hourly = np.apply_along_axis(
+                f, 2, arr_op_temp_v_bedrooms
+            )
         else:
             arr_op_temp_v_bedrooms_hourly = arr_op_temp_v_bedrooms
-            
+
         return criterion_bedroom_comfort(arr_op_temp_v_bedrooms_hourly)
 
     def run_criteria(self, inputs):
@@ -196,23 +246,35 @@ class Tm59CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        arr_criterion_a_bool, arr_criterion_a_percent = self.run_criterion_a(inputs.arr_occupancy)
-        arr_criterion_b_bool, arr_criterion_b_percent, arr_criterion_b_value = self.run_criterion_b()
+        arr_criterion_a_bool, arr_criterion_a_percent = self.run_criterion_a(
+            inputs.arr_occupancy
+        )
+        (
+            arr_criterion_b_bool,
+            arr_criterion_b_percent,
+            arr_criterion_b_value,
+        ) = self.run_criterion_b()
 
         self.di_criteria = {
             "Criterion A": {
                 "Criterion A (Pass/Fail)": arr_criterion_a_bool,
                 "Criterion A (% Hours Delta T >= 1K)": arr_criterion_a_percent.round(2),
-                },
+            },
             "Criterion B": {
                 "Criterion B (Pass/Fail)": arr_criterion_b_bool,
                 "Criterion B (Hours Operative T > 26 Deg. C)": arr_criterion_b_value,
-                "Criterion B (% Hours Operative T > 26 Deg. C)": arr_criterion_b_percent.round(2),
-                },
+                "Criterion B (% Hours Operative T > 26 Deg. C)": arr_criterion_b_percent.round(
+                    2
+                ),
+            },
         }
 
-        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
-        self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_bedroom_ids)
+        self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(
+            inputs.arr_room_ids_sorted
+        )
+        self.arr_sorted_bedroom_names = np.vectorize(inputs.di_room_id_name_map.get)(
+            self.arr_bedroom_ids
+        )
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
 
         # Constructing dictionary of data frames for each air speed.
@@ -226,12 +288,12 @@ class Tm59CalcWizard:
                 arr_room_ids_sorted = self.arr_bedroom_ids
 
             self.di_data_frame_criteria[criterion] = create_df_from_criterion(
-                arr_rooms_sorted, 
+                arr_rooms_sorted,
                 arr_room_ids_sorted,
-                self.li_air_speeds_str, 
-                di_criterion
+                self.li_air_speeds_str,
+                di_criterion,
             )
-    
+
     def create_df_project_info(self, inputs):
         """Creates a data frame displaying the project information.
 
@@ -241,26 +303,38 @@ class Tm59CalcWizard:
         Returns:
             pandas.DataFrame: Data frame of the project information from the IES API.
         """
-        if inputs.di_project_info['project_folder'].find("J:") != -1: # Get job number if J drive is a parent directory
-            job_no = inputs.di_project_info['project_folder'][4:8]  # TODO: Won't work for linux
+        if (
+            inputs.di_project_info["project_folder"].find("J:") != -1
+        ):  # Get job number if J drive is a parent directory
+            job_no = inputs.di_project_info["project_folder"][
+                4:8
+            ]  # TODO: Won't work for linux
         else:
-            job_no = ''
+            job_no = ""
 
-        di_project_info = OrderedDict([
-            ("Type of Analysis", 'CIBSE TM59 Assessment of overheating risk'),
-            ("Weather File", inputs.di_aps_info['weather_file_path']),
-            ("Job Number", job_no),
-            ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
-            ("Analysed Air Speeds", self.li_air_speeds_str),
-            ("Weather File Year", str(inputs.di_weather_file_info["year"])),
-            ("Weather File - Time Zone", 'GMT+{:.2f}'.format(inputs.di_weather_file_info["time_zone"])),
-            ("Longitude", "{:.2f}".format(inputs.di_weather_file_info['longitude'])),
-            ("Latitude", "{:.2f}".format(inputs.di_weather_file_info['latitude'])),
-            ("Date of Analysis", str(datetime.datetime.now())),
-            ("IES_version", inputs.di_project_info['IES_version'])
-        ])
+        di_project_info = OrderedDict(
+            [
+                ("Type of Analysis", "CIBSE TM59 Assessment of overheating risk"),
+                ("Weather File", inputs.di_aps_info["weather_file_path"]),
+                ("Job Number", job_no),
+                ("Analysed Spaces", str(len(inputs.arr_room_ids_sorted))),
+                ("Analysed Air Speeds", self.li_air_speeds_str),
+                ("Weather File Year", str(inputs.di_weather_file_info["year"])),
+                (
+                    "Weather File - Time Zone",
+                    "GMT+{:.2f}".format(inputs.di_weather_file_info["time_zone"]),
+                ),
+                (
+                    "Longitude",
+                    "{:.2f}".format(inputs.di_weather_file_info["longitude"]),
+                ),
+                ("Latitude", "{:.2f}".format(inputs.di_weather_file_info["latitude"])),
+                ("Date of Analysis", str(datetime.datetime.now())),
+                ("IES_version", inputs.di_project_info["IES_version"]),
+            ]
+        )
 
-        df = pd.DataFrame.from_dict(di_project_info, orient='index')
+        df = pd.DataFrame.from_dict(di_project_info, orient="index")
         df = df.rename(columns={0: "Information"})
         return df
 
@@ -273,7 +347,7 @@ class Tm59CalcWizard:
         di_criterion_defs = {
             "Criterion A (% Hours Delta T >= 1K)": "The percentage of occupied hours where delta T equals or exceeds the threshold (1 kelvin) over the total occupied hours.",
             "Criterion B (% Hours Operative T > 26 Deg. C)": "The percentage of occupied hours in a bedroom where the operative temperature exceeds the threshold (26 degrees celsius) between 10pm and 7am over the total annual occupied hours between 10pm and 7am.",
-            "Criterion B (Hours Operative T > 26 Deg. C)": "Number of hours where the operative temperature is strictly greater than 26 Deg. C." 
+            "Criterion B (Hours Operative T > 26 Deg. C)": "Number of hours where the operative temperature is strictly greater than 26 Deg. C.",
         }
         df = pd.DataFrame.from_dict(di_criterion_defs, orient="index")
         df = df.rename(columns={0: "Definition"})
@@ -300,25 +374,45 @@ class Tm59CalcWizard:
 
         self.li_all_criteria_data_frames = [di_project_info, di_criterion_defs]
         for speed in self.li_air_speeds_str:  # Loop through number of air speeds
-            df_all_criteria = pd.merge(self.di_data_frame_criteria["Criterion A"][speed], self.di_data_frame_criteria["Criterion B"][speed], on=["Room ID", "Room Name"], how="left")
+            df_all_criteria = pd.merge(
+                self.di_data_frame_criteria["Criterion A"][speed],
+                self.di_data_frame_criteria["Criterion B"][speed],
+                on=["Room ID", "Room Name"],
+                how="left",
+            )
 
             # If a room fails both criteria then it has failed to pass TM59. Note that if room is not a bedroom then it won't be run through Criterion B, so we assume that the room passes.
-            df_all_criteria["TM59 (Pass/Fail)"] = df_all_criteria.loc[:, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]].fillna(False).sum(axis=1) >= 1  # Sum only boolean columns (pass/fail columns) 
-            
+            df_all_criteria["TM59 (Pass/Fail)"] = (
+                df_all_criteria.loc[
+                    :, ["Criterion A (Pass/Fail)", "Criterion B (Pass/Fail)"]
+                ]
+                .fillna(False)
+                .sum(axis=1)
+                >= 1
+            )  # Sum only boolean columns (pass/fail columns)
+
             # Map true and false to fail and pass respectively
             li_columns_to_map = [
                 "Criterion A (Pass/Fail)",
                 "Criterion B (Pass/Fail)",
-                "TM59 (Pass/Fail)"
+                "TM59 (Pass/Fail)",
             ]
             di_bool_map = {True: "Fail", False: "Pass"}
             for column in li_columns_to_map:
-                df_all_criteria[column] = df_all_criteria[column].map(di_bool_map) 
+                df_all_criteria[column] = df_all_criteria[column].map(di_bool_map)
 
             # Add ForVulnerableOccupants column showing which rooms are in group TM59_VulnerableRooms
-            df_all_criteria.insert(loc=2, column="Vulnerable Occupancy", value=df_all_criteria["Room ID"].isin(inputs.di_room_ids_groups["TM59_VulnerableRooms"]))
+            df_all_criteria.insert(
+                loc=2,
+                column="Vulnerable Occupancy",
+                value=df_all_criteria["Room ID"].isin(
+                    inputs.di_room_ids_groups["TM59_VulnerableRooms"]
+                ),
+            )
 
-            df_all_criteria = df_all_criteria.set_index("Room ID")  # Set index to room name
+            df_all_criteria = df_all_criteria.set_index(
+                "Room ID"
+            )  # Set index to room name
 
             di_all_criteria_data_frame = {
                 "sheet_name": "Results, Air Speed {0}".format(speed),
@@ -335,11 +429,15 @@ class Tm59CalcWizard:
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         if fdir_results is None:
-            fdir_tm59 = pathlib.PureWindowsPath(inputs.di_project_info['project_path']) / "mf_results" / "tm59"
+            fdir_tm59 = (
+                pathlib.PureWindowsPath(inputs.di_project_info["project_path"])
+                / "mf_results"
+                / "tm59"
+            )
         else:
             fdir_tm59 = fdir_results
 
-        file_name = "TM59__{0}.xlsx".format(inputs.di_project_info['project_name'])
+        file_name = "TM59__{0}.xlsx".format(inputs.di_project_info["project_name"])
         fpth_results = fdir_tm59 / file_name
         if on_linux:
             output_dir = pathlib.Path(fdir_tm59.as_posix().replace("C:/", "/mnt/c/"))
@@ -362,6 +460,7 @@ if __name__ == "__main__":
     # ^dev import - copy to top when debugging
 
     from constants import DIR_TESTJOB1_TM59
+
     paths = create_paths(DIR_TESTJOB1_TM59)
     tm59_input_data = fromfile(paths)
     tm59_calc = Tm59CalcWizard(tm59_input_data)

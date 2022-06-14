@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from adaptive_comfort.data_objs import Tm52InputPaths, Tm52InputData
 
+
 def round_half_up(value):
     """If the decimal of value is between 0 and 0.5 then round down.
     Else, round up.
@@ -27,6 +28,7 @@ def round_half_up(value):
 
 np_round_half_up = np.vectorize(round_half_up)
 
+
 def round_for_daily_weighted_exceedance(value):
     """Used for defining the weighing factor from delta T.
     If value is less than or equal to 0 then the value shall be set to 0.
@@ -44,7 +46,11 @@ def round_for_daily_weighted_exceedance(value):
         rounded_value = round_half_up(value)
     return rounded_value
 
-np_round_for_daily_weighted_exceedance = np.vectorize(round_for_daily_weighted_exceedance)
+
+np_round_for_daily_weighted_exceedance = np.vectorize(
+    round_for_daily_weighted_exceedance
+)
+
 
 def mean_every_n_elements(arr, n=24, axis=1):
     """Take the mean every n elements within an array.
@@ -132,6 +138,7 @@ def repeat_every_element_n_times(arr, n=24, axis=0):
     """
     return np.repeat(arr, n, axis)
 
+
 def filter_bedroom_comfort_one_day(arr):
     """Take an hourly time-step array for a day and returns the hours between 10pm and 7am.
 
@@ -142,6 +149,7 @@ def filter_bedroom_comfort_one_day(arr):
         numpy.ndarray: hourly time-step array of hours 10pm to 7am
     """
     return np.concatenate([arr[:7], arr[-2:]])
+
 
 def filter_bedroom_comfort_many_days(arr, axis=1):
     """Takes a multiple hourly time-step array for multiple days and returns the hours between 10pm and 7am for each one of those days. 
@@ -155,9 +163,12 @@ def filter_bedroom_comfort_many_days(arr, axis=1):
         numpy.ndarray: hourly time-step array of hours 10pm to 7am for multiple days
     """
     arr_daily_split = np.reshape(arr, (-1, 24))  # Split yearly arrays into daily arrays
-    arr_bedroom_comfort_split = np.apply_along_axis(filter_bedroom_comfort_one_day, axis, arr_daily_split)
+    arr_bedroom_comfort_split = np.apply_along_axis(
+        filter_bedroom_comfort_one_day, axis, arr_daily_split
+    )
     arr_bedroom_comfort = np.concatenate(arr_bedroom_comfort_split).ravel()
     return arr_bedroom_comfort
+
 
 def filter_bedroom_comfort_time(arr, axis=2):
     """Takes a multiple hourly time-step array for multiple days for multiple rooms and returns the hours between 10pm and 7am 
@@ -183,16 +194,16 @@ def create_paths(fdir):
         Tm52InputPaths: Returns a class object containing the required paths.
     """
     paths = Tm52InputPaths()
-    paths.fpth_project_info = pathlib.Path(fdir) / 'arr_project_info.npy'
-    paths.fpth_aps_info = pathlib.Path(fdir) / 'arr_aps_info.npy'
-    paths.fpth_weather_file_info = pathlib.Path(fdir) / 'arr_weather_file_info.npy'
-    paths.fpth_room_ids_sorted = pathlib.Path(fdir) / 'arr_room_ids_sorted.npy'
-    paths.fpth_room_ids_groups = pathlib.Path(fdir) / 'arr_room_ids_groups.npy'
-    paths.fpth_room_id_name_map = pathlib.Path(fdir) / 'arr_room_id_name_map.npy'
-    paths.fpth_air_temp = pathlib.Path(fdir) / 'arr_air_temp.npy'
-    paths.fpth_mean_radiant_temp = pathlib.Path(fdir) / 'arr_mean_radiant_temp.npy'
-    paths.fpth_occupancy = pathlib.Path(fdir) / 'arr_occupancy.npy'
-    paths.fpth_dry_bulb_temp = pathlib.Path(fdir) / 'arr_dry_bulb_temp.npy'
+    paths.fpth_project_info = pathlib.Path(fdir) / "arr_project_info.npy"
+    paths.fpth_aps_info = pathlib.Path(fdir) / "arr_aps_info.npy"
+    paths.fpth_weather_file_info = pathlib.Path(fdir) / "arr_weather_file_info.npy"
+    paths.fpth_room_ids_sorted = pathlib.Path(fdir) / "arr_room_ids_sorted.npy"
+    paths.fpth_room_ids_groups = pathlib.Path(fdir) / "arr_room_ids_groups.npy"
+    paths.fpth_room_id_name_map = pathlib.Path(fdir) / "arr_room_id_name_map.npy"
+    paths.fpth_air_temp = pathlib.Path(fdir) / "arr_air_temp.npy"
+    paths.fpth_mean_radiant_temp = pathlib.Path(fdir) / "arr_mean_radiant_temp.npy"
+    paths.fpth_occupancy = pathlib.Path(fdir) / "arr_occupancy.npy"
+    paths.fpth_dry_bulb_temp = pathlib.Path(fdir) / "arr_dry_bulb_temp.npy"
     return paths
 
 
@@ -227,7 +238,9 @@ def fromfile(paths):
     return input_data
 
 
-def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, di_criterion):
+def create_df_from_criterion(
+    arr_sorted_room_names, arr_sorted_room_ids, li_air_speeds_str, di_criterion
+):
     """Creates pandas data frame for a criterion.
 
     Args:
@@ -246,27 +259,30 @@ def create_df_from_criterion(arr_sorted_room_names, arr_sorted_room_ids, li_air_
         dict: dict of data frames for each air speed.
     """
     li_room_criterion = []
-    for i, speed in enumerate(li_air_speeds_str):  # Loop through air speeds and add specified columns with data from di_criterion
-        di = OrderedDict([
-            ("Room Name", arr_sorted_room_names),
-            ("Room ID", arr_sorted_room_ids), 
-        ])
+    for i, speed in enumerate(
+        li_air_speeds_str
+    ):  # Loop through air speeds and add specified columns with data from di_criterion
+        di = OrderedDict(
+            [("Room Name", arr_sorted_room_names), ("Room ID", arr_sorted_room_ids),]
+        )
         for k, v in di_criterion.items():
             di[k] = v[i]
-            
+
         li_room_criterion.append(di)
 
-    columns = [name for name in li_room_criterion[0].keys()]  # Obtaining columns for data frame
+    columns = [
+        name for name in li_room_criterion[0].keys()
+    ]  # Obtaining columns for data frame
     di_data_frames_criterion = {
-        speed: pd.DataFrame(data, columns=columns) 
-            for speed, data in zip(li_air_speeds_str, li_room_criterion)
-        }  # Creating dictionary of data frames for each air speed
+        speed: pd.DataFrame(data, columns=columns)
+        for speed, data in zip(li_air_speeds_str, li_room_criterion)
+    }  # Creating dictionary of data frames for each air speed
     return di_data_frames_criterion
 
 
 # function: return job_no as value from file directory
 def jobno_fromdir(dir):
-    '''
+    """
     returns the job number from a given file directory
 
     Name: 
@@ -275,16 +291,17 @@ def jobno_fromdir(dir):
         dir (filepath): file-directory
     Returns: 
         job associated to file-directory
-    '''
+    """
     string = dir
     # string = string.strip('J:\J') - changed from this as issues arise when there is lowercase
     string = string[4:]
-    job_no=string[:4]
+    job_no = string[:4]
     return job_no
 
 
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1_TM52
+
     paths = create_paths(DIR_TESTJOB1_TM52)
     di_input_data = fromfile(paths)
     print("done")
