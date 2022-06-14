@@ -227,13 +227,13 @@ class Tm59MechVentCalcWizard:
             output_dir = pathlib.Path(fdir_tm59.as_posix().replace("C:/", "/mnt/c/"))
             if not output_dir.exists():
                 output_dir.mkdir(parents=True)
-            output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
+            self.output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
             output_dir = pathlib.Path(str(fdir_tm59))
             if not output_dir.exists():
                 output_dir.mkdir(parents=True)
-            output_path = str(fpth_results)
-        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
+            self.output_path = str(fpth_results)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=self.output_path, open=False)
         print("TM59 Mechanically Ventilated Calculation Complete.")
         print("Results File Path: {0}".format(str(fpth_results)))
 

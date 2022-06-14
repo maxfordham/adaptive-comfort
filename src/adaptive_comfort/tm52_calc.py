@@ -307,12 +307,12 @@ class Tm52CalcWizard:
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
         fpth_results = fdir_tm52 / file_name
         if on_linux:
-            output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
+            self.output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
-            output_path = str(fpth_results)
-        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
+            self.output_path = str(fpth_results)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=self.output_path, open=False)
         print("TM52 Calculation Complete.")
-        print("Results File Path: {0}".format(output_path))
+        print("Results File Path: {0}".format(self.output_path))
 
 
 if __name__ == "__main__":
