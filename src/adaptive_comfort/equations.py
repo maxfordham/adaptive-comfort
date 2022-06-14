@@ -2,7 +2,13 @@
 import functools
 import numpy as np
 
-from adaptive_comfort.utils import mean_every_n_elements, repeat_every_element_n_times, sum_every_n_elements, np_round_for_daily_weighted_exceedance
+from adaptive_comfort.utils import (
+    mean_every_n_elements,
+    repeat_every_element_n_times,
+    sum_every_n_elements,
+    np_round_for_daily_weighted_exceedance,
+)
+
 
 def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
@@ -20,8 +26,9 @@ def calc_op_temp(air_temp, air_speed, mean_radiant_temp):
     """
     if air_speed < 0.1:
         air_speed = 0.1
-    return ((air_temp*((10*air_speed)**(1/2))) + mean_radiant_temp) \
-                /(1+((10*air_speed)**(1/2)))
+    return ((air_temp * ((10 * air_speed) ** (1 / 2))) + mean_radiant_temp) / (
+        1 + ((10 * air_speed) ** (1 / 2))
+    )
 
 
 def get_running_mean_temp_startoff(dry_bulb_temp_daily_avg):
@@ -37,13 +44,15 @@ def get_running_mean_temp_startoff(dry_bulb_temp_daily_avg):
     Returns:
         int: returns the running mean temperature startoff value (C)
     """
-    temp_startoff = ((dry_bulb_temp_daily_avg[-1] 
-        + dry_bulb_temp_daily_avg[-2]*0.8 
-        + dry_bulb_temp_daily_avg[-3]*0.6 
-        + dry_bulb_temp_daily_avg[-4]*0.5 
-        + dry_bulb_temp_daily_avg[-5]*0.4 
-        + dry_bulb_temp_daily_avg[-6]*0.3 
-        + dry_bulb_temp_daily_avg[-7]*0.2)/3.8)
+    temp_startoff = (
+        dry_bulb_temp_daily_avg[-1]
+        + dry_bulb_temp_daily_avg[-2] * 0.8
+        + dry_bulb_temp_daily_avg[-3] * 0.6
+        + dry_bulb_temp_daily_avg[-4] * 0.5
+        + dry_bulb_temp_daily_avg[-5] * 0.4
+        + dry_bulb_temp_daily_avg[-6] * 0.3
+        + dry_bulb_temp_daily_avg[-7] * 0.2
+    ) / 3.8
     return temp_startoff
 
 
@@ -61,7 +70,7 @@ def running_mean_temp(dry_bulb_temp_yest_avg, running_mean_yest, a=0.8):
     Returns: 
         float:  Running Mean temp for current day (C)
     """
-    return ((1-a)*dry_bulb_temp_yest_avg + a*running_mean_yest)
+    return (1 - a) * dry_bulb_temp_yest_avg + a * running_mean_yest
 
 
 def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
@@ -79,10 +88,12 @@ def running_mean_temp_daily(temp_startoff, arr_dry_bulb_temp_daily_avg):
     for i, j in enumerate(arr_dry_bulb_temp_daily_avg):
         if i == 0:
             pass
-        else: 
-            running_mean_temp_result = running_mean_temp(arr_dry_bulb_temp_daily_avg[i-1], li_running_mean_temp_daily[i-1])
+        else:
+            running_mean_temp_result = running_mean_temp(
+                arr_dry_bulb_temp_daily_avg[i - 1], li_running_mean_temp_daily[i - 1]
+            )
             li_running_mean_temp_daily.append(running_mean_temp_result)
-            
+
     return np.array(li_running_mean_temp_daily)
 
 
@@ -96,13 +107,21 @@ def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
         numpy.ndarray: Hourly running mean temperature
     """
     f = functools.partial(mean_every_n_elements, n=24, axis=1)
-    arr_dry_bulb_temp_daily = np.apply_along_axis(f, 0, arr_dry_bulb_temp_hourly)  # Convert hourly to daily
-    
-    running_mean_temp_startoff = get_running_mean_temp_startoff(arr_dry_bulb_temp_daily)  # Get running mean temp start off value
-    arr_running_mean_temp_daily = running_mean_temp_daily(running_mean_temp_startoff, arr_dry_bulb_temp_daily)  # Get rest of running mean temps
+    arr_dry_bulb_temp_daily = np.apply_along_axis(
+        f, 0, arr_dry_bulb_temp_hourly
+    )  # Convert hourly to daily
+
+    running_mean_temp_startoff = get_running_mean_temp_startoff(
+        arr_dry_bulb_temp_daily
+    )  # Get running mean temp start off value
+    arr_running_mean_temp_daily = running_mean_temp_daily(
+        running_mean_temp_startoff, arr_dry_bulb_temp_daily
+    )  # Get rest of running mean temps
 
     f = functools.partial(repeat_every_element_n_times, n=24, axis=0)
-    arr_running_mean_temp_hourly = np.apply_along_axis(f, 0, arr_running_mean_temp_daily) # Convert back to hourly
+    arr_running_mean_temp_hourly = np.apply_along_axis(
+        f, 0, arr_running_mean_temp_daily
+    )  # Convert back to hourly
     return arr_running_mean_temp_hourly
 
 
@@ -121,7 +140,7 @@ def additional_cooling(air_speed):
     if air_speed <= 0.1:
         return 0
     else:
-        return 7-(50/(4+(10*(air_speed**0.5)))) 
+        return 7 - (50 / (4 + (10 * (air_speed ** 0.5))))
 
 
 def comfort_temp(running_mean_temp):
@@ -156,7 +175,7 @@ def calculate_max_acceptable_temp(running_mean_temp, cat_adj, air_speed):
     Returns: 
         float: Maximum Acceptable Temperature for given room and air speed (C)
     """
-    return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj 
+    return comfort_temp(running_mean_temp) + additional_cooling(air_speed) + cat_adj
 
 
 def deltaT(op_temp, max_acceptable_temp):
@@ -174,6 +193,7 @@ def deltaT(op_temp, max_acceptable_temp):
     """
     return op_temp - max_acceptable_temp
 
+
 def daily_weighted_exceedance(arr_deltaT_occupied):
     """Calculates the daily weighted exceedance.
 
@@ -184,10 +204,15 @@ def daily_weighted_exceedance(arr_deltaT_occupied):
         numpy.ndarray: The daily weighted exceedance
     """
     arr_weighting_factors = np_round_for_daily_weighted_exceedance(arr_deltaT_occupied)
-    n = int(arr_weighting_factors.shape[2]/365) 
-    f = functools.partial(sum_every_n_elements, n=n)  # We want to sum the intervals so the array represents daily intervals
-    time_step = 8760/arr_weighting_factors.shape[2]  # If half hour steps then time_step = 1/2
+    n = int(arr_weighting_factors.shape[2] / 365)
+    f = functools.partial(
+        sum_every_n_elements, n=n
+    )  # We want to sum the intervals so the array represents daily intervals
+    time_step = (
+        8760 / arr_weighting_factors.shape[2]
+    )  # If half hour steps then time_step = 1/2
     return time_step * np.apply_along_axis(f, 2, arr_weighting_factors)
+
 
 # Vectorised Functions
 

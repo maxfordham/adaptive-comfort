@@ -6,8 +6,10 @@ import numpy.ma as ma
 import pandas as pd
 from collections import OrderedDict
 
-import sys; import pathlib
-DIR_MODULE = pathlib.Path(__file__).parents[1] / 'src'
+import sys
+import pathlib
+
+DIR_MODULE = pathlib.Path(__file__).parents[1] / "src"
 sys.path.append(str(DIR_MODULE))
 # for dev only
 
@@ -16,7 +18,7 @@ from adaptive_comfort.utils import create_paths, fromfile
 from adaptive_comfort.tm59_calc import Tm59CalcWizard
 from adaptive_comfort.tm59mechvent_calc import Tm59MechVentCalcWizard
 from .constants import DIR_TESTJOB1_TM59, DIR_TESTJOB1_TM59MECHVENT
-    
+
 
 class TestTm59:
     def test_run_tm59(self):
