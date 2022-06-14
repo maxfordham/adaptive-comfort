@@ -134,7 +134,7 @@ class TestCheckResults:
         arr_criterion_abs_change = np.where(np.isfinite(arr_criterion_abs_change), arr_criterion_abs_change, 0)  # Set nans to 0
         arr_criterion_rel_change = np.where(np.isfinite(arr_criterion_rel_change), arr_criterion_rel_change, 0) 
 
-        to_excel(data_object=li_criteria_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_all_criteria.xlsx"), open=False)
+        to_excel(data_object=li_criteria_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_all_criteria.xlsx"))
         assert arr_criteria_failing_bool.sum(dtype=bool) == True  # Do criteria failing match?
         assert (arr_criterion_abs_change <= 1).sum(dtype=bool) == True  # Does the absolute difference for all criteria have a value less than or equal to 1?
         assert (arr_criterion_rel_change < 5).sum(dtype=bool) == True  # Does the relative difference for all criteria have a margin of error less than 5%?
@@ -157,7 +157,7 @@ class TestCheckResults:
             "sheet_name": "Running Mean Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_running_mean_temp.xlsx"), open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_running_mean_temp.xlsx"))
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
@@ -180,7 +180,7 @@ class TestCheckResults:
             "sheet_name": "Max Acceptable Temperature",
             "df": df,
         }
-        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_max_acceptable_temp.xlsx"), open=False)
+        to_excel(data_object=di_to_excel, fpth=str(DIR_TESTOUTPUTS / "test_max_acceptable_temp.xlsx"))
         assert (abs_change <= 1).sum(dtype=bool)
         assert (rel_change < 5).sum(dtype=bool)
 
