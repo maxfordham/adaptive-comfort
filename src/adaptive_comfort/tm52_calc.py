@@ -167,15 +167,6 @@ class Tm52CalcWizard:
         arr_criterion_two_bool, arr_criterion_two_max = self.run_criterion_two(inputs.arr_occupancy)
         arr_criterion_three_bool, arr_criterion_three_max = self.run_criterion_three()
 
-        # # We only consider analysed rooms for TM52
-        # li_room_ids_sorted = []
-        # for room_id in inputs.arr_room_ids_sorted: # Loop through all IDs
-        #     if room_id in inputs.di_room_ids_groups["TM52_AnalysedRooms"]:
-        #         li_room_ids_sorted.append(room_id)
-
-        # self.arr_filtered_room_ids_sorted = np.array(li_room_ids_sorted)  # Filtered room IDs so as to only acknowledge the group we want to look at.
-        # self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(self.arr_filtered_room_ids_sorted)
-
         self.li_air_speeds_str = [str(float(i[0][0])) for i in arr_air_speed]
         self.arr_sorted_room_names = np.vectorize(inputs.di_room_id_name_map.get)(inputs.arr_room_ids_sorted)
 
@@ -314,13 +305,13 @@ class Tm52CalcWizard:
         file_name = "TM52__{0}.xlsx".format(inputs.di_project_info['project_name'])
         fpth_results = fdir_tm52 / file_name
         if on_linux:
-            output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
+            self.output_path = fpth_results.as_posix().replace("C:/", "/mnt/c/")
         else:
-            output_path = str(fpth_results)
-        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path)
+            self.output_path = str(fpth_results)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=self.output_path)
         print("TM52 Calculation Complete.")
-        print("Results File Path: {0}".format(output_path))
-
+        print("Results File Path: {0}".format(self.output_path))
+        
 
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1_TM52
