@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import xlsxwriter as xw
-from adaptive_comfort.datamine_functions import jobno_fromdir
+from utils import jobno_fromdir
 import getpass
 import datetime
 import copy
@@ -490,32 +490,9 @@ def sheet_table(df,
             worksheet.insert_textbox(t['row'], t['col'], t['text'], t['options'])
 
     return worksheet
-
-
-def main(data_object,
-         fpth,
-         open=True,
-         print_fpth=False,
-         FileLink_fpth=True):
-         
-    """
-    the name "main" is DEPRECATED! USE "to_excel" INSTEAD
-    """
-    print('the name "main" is DEPRECATED! USE "to_excel" INSTEAD')
-    lidi = generate_sheet_json(data_object, fpth)
-    json_object_to_excel(lidi, fpth)
-    if open == True:
-        open_file(fpth)
-    if print_fpth == True:
-        print(fpth)
-    '''if FileLink_fpth == True:
-        from IPython.display import FileLink
-        FileLink(fpth)'''
-    return fpth
     
 def to_excel(data_object,
          fpth,
-         open=True,
          print_fpth=False,
          FileLink_fpth=True):
     """
@@ -530,8 +507,6 @@ def to_excel(data_object,
     """
     lidi = generate_sheet_json(data_object, fpth)
     json_object_to_excel(lidi, fpth)
-    if open == True:
-        open_file(fpth)
     if print_fpth == True:
         print(fpth)
     '''if FileLink_fpth == True:

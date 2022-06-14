@@ -351,7 +351,7 @@ class Tm59CalcWizard:
             if not output_dir.exists():
                 output_dir.mkdir(parents=True)
             output_path = str(fpth_results)
-        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path, open=False)
+        to_excel(data_object=self.li_all_criteria_data_frames, fpth=output_path)
         print("TM59 Calculation Complete.")
         print("Results File Path: {0}".format(str(fpth_results)))
 
