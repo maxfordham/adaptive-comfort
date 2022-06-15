@@ -25,3 +25,4 @@ dependencies:
   - pip
   - pip:
     - sphinx_github_changelog
+    - sphinx-panels
