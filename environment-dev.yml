@@ -5,10 +5,10 @@ name: adaptive-comfort
 channels:
   - defaults
   - conda-forge
-#  - http://10.10.30.125:8000
 dependencies:
   - python==3.4.5
   - numpy
   - pandas
   - xlsxwriter
+  - black
   - pytest
