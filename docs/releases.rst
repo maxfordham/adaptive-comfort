@@ -5,4 +5,4 @@ Releases
 ----
 
 .. changelog::
-    :github: https://github.com/ollyhensby/adaptive_comfort/releases/
+    :github: https://github.com/maxfordham/adaptive_comfort/releases/
