@@ -11,7 +11,7 @@ To build, do the following:
 3. setting github token for sphinx_github_changelog
 - Within conf.py, we use a linux environment variable "GITHUB_TOKEN_CHANGELOG". This must be set before trying to produce the docs using sphinx.
 - Note, however, this isn't in the _config.yml file. If we place an environment variable within the _config.yml, producing the conf.py using jupyter-book bugs out.
-Issue here: https://github.com/maxfordham/adaptive_comfort/issues/21
+Issue here: https://github.com/maxfordham/adaptive-comfort/issues/21
 
 Anyway, create the token in Github first. You do this within "Settings" -> "Developer Settings" -> "Personal access tokens".
 
