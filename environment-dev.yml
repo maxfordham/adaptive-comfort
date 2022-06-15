@@ -1,4 +1,4 @@
-name: adaptive_comfort
+name: adaptive-comfort
 # channels priority
 # see https://bioconda.github.io/
 # conda-forge has highest prioriy
