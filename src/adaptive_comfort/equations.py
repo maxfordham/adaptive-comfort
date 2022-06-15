@@ -114,15 +114,15 @@ def calculate_running_mean_temp_hourly(arr_dry_bulb_temp_hourly):
     running_mean_temp_startoff = get_running_mean_temp_startoff(
         arr_dry_bulb_temp_daily
     )  # Get running mean temp start off value
-    arr_running_mean_temp_daily = running_mean_temp_daily(
+    ARR_RUNNING_MEAN_TEMP_daily = running_mean_temp_daily(
         running_mean_temp_startoff, arr_dry_bulb_temp_daily
     )  # Get rest of running mean temps
 
     f = functools.partial(repeat_every_element_n_times, n=24, axis=0)
-    arr_running_mean_temp_hourly = np.apply_along_axis(
-        f, 0, arr_running_mean_temp_daily
+    ARR_RUNNING_MEAN_TEMP_hourly = np.apply_along_axis(
+        f, 0, ARR_RUNNING_MEAN_TEMP_daily
     )  # Convert back to hourly
-    return arr_running_mean_temp_hourly
+    return ARR_RUNNING_MEAN_TEMP_hourly
 
 
 def additional_cooling(air_speed):

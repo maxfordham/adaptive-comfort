@@ -11,7 +11,11 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click>=7.0",
+    "click>=7.0",
+    "python==3.4.5",
+    "numpy>=1.14.0",
+    "pandas>=0.20.3",
+    "xlsxwriter>=3.0.3",
 ]
 
 test_requirements = [
@@ -21,27 +25,25 @@ test_requirements = [
 setup(
     author="Oliver James Hensby",
     author_email="o.hensby@maxfordham.com",
-    python_requires=">=3.6",
+    python_requires=">=3.4.5",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
     ],
-    description="Adaptive thermal comfort. Contains calculations adhering to CIBSE's guidance within TM52 and TM59.",
+    description="This package assesses the thermal comfort of a space within a building against the Criterion defined in CIBSE TM52 and TM59.",
     entry_points={"console_scripts": ["adaptive_comfort=adaptive_comfort.cli:main",],},
     install_requires=requirements,
     long_description=readme + "\n\n" + history,
     include_package_data=True,
     keywords="adaptive_comfort",
     name="adaptive_comfort",
-    packages=find_packages(include=["adaptive_comfort", "adaptive_comfort.*"]),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/maxfordham/adaptive-comfort",
-    version="0.1.0",
-    zip_safe=False,
+    version="0.1.1",
 )

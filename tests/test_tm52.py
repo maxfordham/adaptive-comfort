@@ -12,8 +12,8 @@ from .constants import (
     DIR_TESTJOB1_TM52_DATA,
     FPTH_IES_TESTJOB1_V_0_1,
     DIR_OP_TEMP_VISTA,
-    arr_max_adaptive_temp,
-    arr_running_mean_temp,
+    ARR_MAX_ADAPTIVE_TEMP,
+    ARR_RUNNING_MEAN_TEMP,
 )
 
 
@@ -194,13 +194,13 @@ class TestCheckResults:
     def test_daily_running_mean_temp(self):
         """Compares the daily running mean temperature from IES with the one calculated within the MF script.
         """
-        ies_results = arr_running_mean_temp.astype("float64").round(3)
-        mf_results = self.tm52_calc.arr_running_mean_temp.round(3)
-        abs_change = self.tm52_calc.arr_running_mean_temp.round(
+        ies_results = ARR_RUNNING_MEAN_TEMP.astype("float64").round(3)
+        mf_results = self.tm52_calc.ARR_RUNNING_MEAN_TEMP.round(3)
+        abs_change = self.tm52_calc.ARR_RUNNING_MEAN_TEMP.round(
             3
-        ) - arr_running_mean_temp.astype("float64").round(3)
+        ) - ARR_RUNNING_MEAN_TEMP.astype("float64").round(3)
         rel_change = (
-            abs_change / (arr_running_mean_temp.astype("float64").round(3))
+            abs_change / (ARR_RUNNING_MEAN_TEMP.astype("float64").round(3))
         ) * 100
         di = OrderedDict(
             [
@@ -226,13 +226,13 @@ class TestCheckResults:
     def test_max_adaptive_temp(self):
         """Compares the maximum-adaptive temperature from IES with the one calculated within the MF script.
         """
-        ies_results = arr_max_adaptive_temp.astype("float64").round(3)
+        ies_results = ARR_MAX_ADAPTIVE_TEMP.astype("float64").round(3)
         mf_results = self.tm52_calc.arr_max_acceptable_temp[0][0].round(3)
         abs_change = self.tm52_calc.arr_max_acceptable_temp[0][0].round(
             3
-        ) - arr_max_adaptive_temp.astype("float64").round(3)
+        ) - ARR_MAX_ADAPTIVE_TEMP.astype("float64").round(3)
         rel_change = (
-            abs_change / (arr_max_adaptive_temp.astype("float64").round(3))
+            abs_change / (ARR_MAX_ADAPTIVE_TEMP.astype("float64").round(3))
         ) * 100
         di = OrderedDict(
             [

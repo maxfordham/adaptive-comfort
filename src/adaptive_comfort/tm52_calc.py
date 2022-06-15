@@ -117,12 +117,12 @@ class Tm52CalcWizard:
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
-        self.arr_running_mean_temp = calculate_running_mean_temp_hourly(
+        self.ARR_RUNNING_MEAN_TEMP = calculate_running_mean_temp_hourly(
             inputs.arr_dry_bulb_temp
         )
         cat_II_temp = 3  # For TM52 calculation use category 2
         self.arr_max_acceptable_temp = np_calculate_max_acceptable_temp(
-            self.arr_running_mean_temp, cat_II_temp, arr_air_speed
+            self.ARR_RUNNING_MEAN_TEMP, cat_II_temp, arr_air_speed
         )
         if (
             self.arr_max_acceptable_temp.shape[2] != self.arr_op_temp_v.shape[2]
