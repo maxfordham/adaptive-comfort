@@ -9,6 +9,7 @@ from adaptive_comfort.tm52_calc import Tm52CalcWizard
 from .constants import (
     DIR_TESTOUTPUTS,
     DIR_TESTJOB1_TM52,
+    DIR_TESTJOB1_TM52_DATA,
     FPTH_IES_TESTJOB1_V_0_1,
     DIR_OP_TEMP_VISTA,
     arr_max_adaptive_temp,
@@ -41,7 +42,7 @@ def read_ies_txt(fpth):
 class TestCheckResults:
     @classmethod
     def setup_class(cls):
-        paths = create_paths(DIR_TESTJOB1_TM52)
+        paths = create_paths(DIR_TESTJOB1_TM52_DATA)
         tm52_input_data = fromfile(paths)
         cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
 
