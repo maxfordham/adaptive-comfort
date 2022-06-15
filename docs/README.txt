@@ -28,4 +28,5 @@ export GITHUB_TOKEN_CHANGELOG=<token>
 
 Notes.
 - when authoring notebooks that will be executed the notebook must be authored from directly within the environment - __not__ using nb_conda_kernels
+- Issue on Public repo still needing github token to access releases: https://github.com/ewjoachim/sphinx-github-changelog/issues/70
 
