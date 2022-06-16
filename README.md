@@ -1,6 +1,6 @@
 # Welcome to Adaptive Comfort!
 
-This package assesses the thermal comfort of a space within a building against the Criterion defined in CIBSE TM52 and TM59.  
+This package assesses the thermal comfort of a space within a building against the criterion defined in CIBSE TM52 and TM59.  
 
 ## Inputs
 - Air temperature of the rooms
