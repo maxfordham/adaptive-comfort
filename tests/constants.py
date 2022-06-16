@@ -14,5 +14,5 @@ DIR_TESTOUTPUTS = DIR_TESTS / "testoutputs"
 DIR_OP_TEMP_VISTA = DIR_TESTOUTPUTS / "operative_temperature_from_vista.txt"
 FPTH_IES_TESTJOB1_V_0_1 = DIR_TESTJOB1 / "vista" / "TestJob1_TM52_0.1.csv"
 
-arr_max_adaptive_temp = np.load(str(DIR_TESTJOB1_TM52_DATA / "arr_max_adaptive_temp.npy"))
-arr_running_mean_temp = np.load(str(DIR_TESTJOB1_TM52_DATA / "arr_running_mean_temp.npy"))
+ARR_MAX_ADAPTIVE_TEMP = np.load(str(DIR_TESTJOB1_TM52_DATA / "arr_max_adaptive_temp.npy"))
+ARR_RUNNING_MEAN_TEMP = np.load(str(DIR_TESTJOB1_TM52_DATA / "arr_running_mean_temp.npy"))

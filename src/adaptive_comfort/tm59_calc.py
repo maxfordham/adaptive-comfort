@@ -134,30 +134,30 @@ class Tm59CalcWizard:
             inputs (Tm52InputData): Class instance containing the required inputs.
         """
 
-        arr_running_mean_temp = calculate_running_mean_temp_hourly(
+        ARR_RUNNING_MEAN_TEMP = calculate_running_mean_temp_hourly(
             inputs.arr_dry_bulb_temp
         )
         cat_I_temp = 2
         cat_II_temp = 3
 
         # For TM59 calculation use category 2, for rooms used by vulnerable occupants use category 1
-        self.arr_max_adaptive_temp = np_calculate_max_acceptable_temp(
-            arr_running_mean_temp, cat_II_temp, arr_air_speed
+        self.ARR_MAX_ADAPTIVE_TEMP = np_calculate_max_acceptable_temp(
+            ARR_RUNNING_MEAN_TEMP, cat_II_temp, arr_air_speed
         )
-        self.arr_max_adaptive_temp_vulnerable = np_calculate_max_acceptable_temp(
-            arr_running_mean_temp, cat_I_temp, arr_air_speed
+        self.ARR_MAX_ADAPTIVE_TEMP_vulnerable = np_calculate_max_acceptable_temp(
+            ARR_RUNNING_MEAN_TEMP, cat_I_temp, arr_air_speed
         )
 
         if (
-            self.arr_max_adaptive_temp.shape[2] != self.arr_op_temp_v.shape[2]
+            self.ARR_MAX_ADAPTIVE_TEMP.shape[2] != self.arr_op_temp_v.shape[2]
         ):  # If max adaptive time step axis does not match operative temp time step then modify.
-            n = int(self.arr_op_temp_v.shape[2] / self.arr_max_adaptive_temp.shape[2])
+            n = int(self.arr_op_temp_v.shape[2] / self.ARR_MAX_ADAPTIVE_TEMP.shape[2])
             f = functools.partial(repeat_every_element_n_times, n=n, axis=0)
-            self.arr_max_adaptive_temp = np.apply_along_axis(
-                f, 2, self.arr_max_adaptive_temp
+            self.ARR_MAX_ADAPTIVE_TEMP = np.apply_along_axis(
+                f, 2, self.ARR_MAX_ADAPTIVE_TEMP
             )
-            self.arr_max_adaptive_temp_vulnerable = np.apply_along_axis(
-                f, 2, self.arr_max_adaptive_temp_vulnerable
+            self.ARR_MAX_ADAPTIVE_TEMP_vulnerable = np.apply_along_axis(
+                f, 2, self.ARR_MAX_ADAPTIVE_TEMP_vulnerable
             )
 
     def deltaT(self, inputs):
@@ -176,20 +176,20 @@ class Tm59CalcWizard:
         if (
             li_vulnerable_idx
         ):  # If vulnerable room group assigned to any rooms then edit max_adaptive_temp
-            # Repeating arr_max_adaptive_temp so a max adaptive temp exists for each room. This is because the max acceptable temp
+            # Repeating ARR_MAX_ADAPTIVE_TEMP so a max adaptive temp exists for each room. This is because the max acceptable temp
             # is now room specific depending on the group the room belongs to.
-            arr_max_adaptive_temp = np.repeat(
-                self.arr_max_adaptive_temp, len(inputs.arr_room_ids_sorted), axis=1
+            ARR_MAX_ADAPTIVE_TEMP = np.repeat(
+                self.ARR_MAX_ADAPTIVE_TEMP, len(inputs.arr_room_ids_sorted), axis=1
             )
-            arr_max_adaptive_temp[:, li_vulnerable_idx, :] = np.repeat(
-                self.arr_max_adaptive_temp_vulnerable,
+            ARR_MAX_ADAPTIVE_TEMP[:, li_vulnerable_idx, :] = np.repeat(
+                self.ARR_MAX_ADAPTIVE_TEMP_vulnerable,
                 len(inputs.di_room_ids_groups["TM59_VulnerableRooms"]),
                 axis=1,
             )
         else:
-            arr_max_adaptive_temp = self.arr_max_adaptive_temp
+            ARR_MAX_ADAPTIVE_TEMP = self.ARR_MAX_ADAPTIVE_TEMP
 
-        self.arr_deltaT = deltaT(self.arr_op_temp_v, arr_max_adaptive_temp)
+        self.arr_deltaT = deltaT(self.arr_op_temp_v, ARR_MAX_ADAPTIVE_TEMP)
 
     def run_criterion_a(self, arr_occupancy):
         """Convert delta T and occupancy array so the reporting interval is hourly, round the values,

@@ -29,7 +29,7 @@ class Tm52InputPaths(object):
 
 
 class Tm52ExtraData(object):
-    arr_running_mean_temp = None
-    arr_max_adaptive_temp = None
+    ARR_RUNNING_MEAN_TEMP = None
+    ARR_MAX_ADAPTIVE_TEMP = None
     arr_operative_temp = None
 
