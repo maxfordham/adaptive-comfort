@@ -1,8 +1,8 @@
 # Book settings
 # Learn more at https://jupyterbook.org/customize/config.html
 
-title: adaptive_comfort
-author: mfcode
+title: adaptive-comfort
+author: Max Fordham LLP
 logo: images/logo.png
 
 # Force re-execution of notebooks on each build.
