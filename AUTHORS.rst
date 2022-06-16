@@ -5,7 +5,8 @@ Credits
 Development Lead
 ----------------
 
-* Oliver James Hensby <o.hensby@maxfordham.com>
+* John Gunstone <j.gunstone@maxfordham.com>
+* Oliver Hensby <o.hensby@maxfordham.com>
 
 Contributors
 ------------
