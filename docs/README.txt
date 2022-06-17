@@ -2,6 +2,13 @@ To build, do the following:
 
 **note: we assume you are in the same dir as this README.txt file. 
 
+if you haven't already create the conda env:
+```bash
+mamba env create -f environment.yml
+```
+
+then 
+
 1. delete the ../src/__init.py
 ^ this is here for dev only and makes the doc generator think that ipyautoui is a subpackage of src
 
