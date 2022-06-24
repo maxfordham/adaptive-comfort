@@ -29,6 +29,7 @@ Then set the env variable in linux:
 ```bash
 export GITHUB_TOKEN_CHANGELOG=<token>
 ```
+^ this is temporary - only within the a single command prompt
 
 4. generate docs
 >>> sphinx-build . _build/html -b html
