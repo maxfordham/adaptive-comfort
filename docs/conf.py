@@ -3,8 +3,6 @@
 # If you wish to continue using _config.yml, make edits to that file and
 # re-generate this one.
 ###############################################################################
-import os
-
 author = 'Max Fordham LLP'
 autoapi_add_toctree_entry = True
 autoapi_dirs = ['../src']
@@ -48,7 +46,7 @@ napoleon_use_rtype = True
 nb_output_stderr = 'show'
 numfig = True
 pygments_style = 'sphinx'
-sphinx_github_changelog_token = os.environ.get("GITHUB_TOKEN_CHANGELOG")
+sphinx_github_changelog_token = 'os.environ.get("GITHUB_TOKEN_CHANGELOG")'
 suppress_warnings = ['myst.domains']
 use_jupyterbook_latex = True
 use_multitoc_numbering = True
