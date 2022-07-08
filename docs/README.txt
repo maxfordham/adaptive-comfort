@@ -4,7 +4,7 @@ To build, do the following:
 
 ```bash
 mamba env create -f environment.yml # create conda env
-conda activate adaptive_comfort-docs # activate 
+conda activate adaptive-comfort-docs # activate 
 
 python _docs_build_local.py # build docs
 # ^ note. normally we'd just run the sphinx command here to build docs...
