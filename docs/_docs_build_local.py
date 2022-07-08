@@ -13,7 +13,7 @@ GITHUB_TOKEN = pathlib.Path('GITHUB_TOKEN').read_text()
 CONF = pathlib.Path('conf.py')
 
 env = os.environ.copy()
-env['SPHINX_GITHUB_CHANGELOG_TOKEN '] = GITHUB_TOKEN
+env['SPHINX_GITHUB_CHANGELOG_TOKEN'] = GITHUB_TOKEN
 # ^ add SPHINX_GITHUB_CHANGELOG_TOKEN to environ
 
 subprocess.call('jupyter-book config sphinx .', shell=True)
