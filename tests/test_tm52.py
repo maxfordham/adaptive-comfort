@@ -43,7 +43,7 @@ class TestCheckResults:
     @classmethod
     def setup_class(cls):
         paths = create_paths(DIR_TESTJOB1_TM52_DATA)
-        tm52_input_data = fromfile(paths)
+        tm52_input_data = fromfile(paths, allow_pickle=True)
         cls.tm52_calc = Tm52CalcWizard(tm52_input_data, fdir_results=DIR_TESTJOB1_TM52)
 
     def test_all_criteria(self):
