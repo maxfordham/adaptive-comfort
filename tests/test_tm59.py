@@ -24,13 +24,9 @@ class TestTm59:
     def test_run_tm59(self):
         """Test to make sure TM59 script runs
         """
-        paths = create_paths(DIR_TESTJOB1_TM59_DATA)
-        tm_input_data = fromfile(paths, allow_pickle=True)
-        self.tm59_calc = Tm59CalcWizard(tm_input_data, fdir_results=DIR_TESTJOB1_TM59)
+        self.tm59_calc = Tm59CalcWizard.from_files(DIR_TESTJOB1_TM59_DATA, fdir_results=DIR_TESTJOB1_TM59)
 
     def test_run_tm59mechvents(self):
         """Test to make sure TM59 mech vent script runs
         """
-        paths = create_paths(DIR_TESTJOB1_TM59MECHVENT_DATA)
-        tm_input_data = fromfile(paths, allow_pickle=True)
-        self.tm59mechvent_calc = Tm59MechVentCalcWizard(tm_input_data, fdir_results=DIR_TESTJOB1_TM59MECHVENT)
+        self.tm59mechvent_calc = Tm59MechVentCalcWizard.from_files(DIR_TESTJOB1_TM59MECHVENT_DATA, fdir_results=DIR_TESTJOB1_TM59MECHVENT)
