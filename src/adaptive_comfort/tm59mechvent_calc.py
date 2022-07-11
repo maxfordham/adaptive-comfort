@@ -60,9 +60,10 @@ class Tm59MechVentCalcWizard:
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
-            fdir_results (Path): Used to override project path to save elsewhere.
+            fdir_results (Union[pathlib.Path, str]): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
+        self._check_occupancy_data(inputs)
         self.factor = int(
             inputs.arr_air_temp.shape[1] / 8760
         )  # Find factor to hourly time-step array
@@ -70,6 +71,38 @@ class Tm59MechVentCalcWizard:
         self.run_criteria(inputs)
         self.merge_dfs(inputs)
         self.to_excel(inputs, fdir_results, on_linux)
+
+    @classmethod
+    def from_files(cls, fdir, fdir_results=None, on_linux=True):
+        """Pass file directory containing numpy data.
+
+        Args:
+            fdir (Union[pathlib.Path, str]): file directory containing numpy data.
+            fdir_results (Union[pathlib.Path, str], optional): Used to override project path to save elsewhere.
+            on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.. Defaults to True.
+
+        Returns:
+            _type_: _description_
+        """
+        paths = create_paths(fdir)
+        input_data = fromfile(paths, allow_pickle=True)
+        return cls(inputs=input_data, fdir_results=fdir_results, on_linux=on_linux)
+
+    @staticmethod
+    def _check_occupancy_data(inputs):
+        """Check whether there is occupancy data missing for each room.
+
+        Args:
+            inputs (Tm52InputData): Class instance containing the required inputs.
+
+        Raises:
+            ValueError: If summed occupancy annually is 0.
+        """
+        arr_occupancy_annual_sum = inputs.arr_occupancy.sum(axis=1)
+        if 0 in arr_occupancy_annual_sum:
+            li_indices = [i for i,v in enumerate(arr_occupancy_annual_sum) if v == 0]
+            li_rooms_without_occupancy = [inputs.arr_room_ids_sorted[i] for i in li_indices]
+            raise ValueError("Rooms are missing occupancy data.\nRoom IDs missing occupancy data: {0}".format(li_rooms_without_occupancy))
 
     def op_temp(self, inputs):
         """Calculates the operative temperature for each air speed.
@@ -240,7 +273,7 @@ class Tm59MechVentCalcWizard:
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
-            fdir_results (Path): Override project path.
+            fdir_results (Union[pathlib.Path, str]): Override project path.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         if fdir_results is None:
@@ -278,6 +311,4 @@ class Tm59MechVentCalcWizard:
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1_TM59MECHVENT
 
-    paths = create_paths(DIR_TESTJOB1_TM59MECHVENT)
-    tm59_input_data = fromfile(paths)
-    tm59_calc = Tm59MechVentCalcWizard(tm59_input_data)
+    calc = Tm59MechVentCalcWizard.from_files(DIR_TESTJOB1_TM59MECHVENT)

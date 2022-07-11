@@ -209,7 +209,7 @@ def create_paths(fdir):
     return paths
 
 
-def fromfile(paths):
+def fromfile(paths, allow_pickle=False):
     """Obtain input data which is dumped by IES API.
 
     Args:
@@ -223,7 +223,7 @@ def fromfile(paths):
     """
     di_input_data = {}
     for k, fpth in paths.__dict__.items():
-        di_input_data[fpth.stem] = np.load(str(fpth))
+        di_input_data[fpth.stem] = np.load(str(fpth), allow_pickle=allow_pickle)
 
     input_data = Tm52InputData()
     input_data.di_project_info = di_input_data["arr_project_info"].item()

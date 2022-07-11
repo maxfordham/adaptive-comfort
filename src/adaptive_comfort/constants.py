@@ -12,8 +12,6 @@ DT_SEPT_END_DAY = date(2010, 10, 1) - date(2010, 1, 1)
 MAY_START_HOUR = DT_MAY_START_DAY.days * 24
 SEPT_END_HOUR = DT_SEPT_END_DAY.days * 24
 
-# TODO: Add load test constants function
-
 # Test job 1
 DIR_TESTJOB1_TM52 = (
     pathlib.Path(__file__).parents[2]
