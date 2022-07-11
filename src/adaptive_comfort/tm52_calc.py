@@ -102,6 +102,17 @@ class Tm52CalcWizard:
         self.merge_dfs(inputs)
         self.to_excel(inputs, fdir_results, on_linux)
 
+    @classmethod
+    def from_files(cls, fdir, fdir_results=None, on_linux=True):
+        """Pass file directory containing numpy data.
+
+        Args:
+            fdir (Union[pathlib.Path, str]): file directory containing numpy data.
+        """
+        paths = create_paths(fdir)
+        input_data = fromfile(paths, allow_pickle=True)
+        return cls(inputs=input_data, fdir_results=fdir_results, on_linux=on_linux)
+
     @staticmethod
     def _check_occupancy_data(inputs):
         """Check whether there is occupancy data missing for each room.
@@ -404,8 +415,4 @@ class Tm52CalcWizard:
 if __name__ == "__main__":
     from constants import DIR_TESTJOB1_TM52
 
-    paths = create_paths(
-        DIR_TESTJOB1_TM52
-    )  # Uses project information stored in numpy files saved
-    tm52_input_data = fromfile(paths)
-    tm52_calc = Tm52CalcWizard(tm52_input_data)
+    calc = Tm52CalcWizard.from_files(DIR_TESTJOB1_TM52)  # Uses project information stored in numpy files saved

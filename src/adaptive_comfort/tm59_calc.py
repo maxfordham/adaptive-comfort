@@ -101,6 +101,17 @@ class Tm59CalcWizard:
         self.merge_dfs(inputs)
         self.to_excel(inputs, fdir_results, on_linux)
 
+    @classmethod
+    def from_files(cls, fdir, fdir_results=None, on_linux=True):
+        """Pass file directory containing numpy data.
+
+        Args:
+            fdir (Union[pathlib.Path, str]): file directory containing numpy data.
+        """
+        paths = create_paths(fdir)
+        input_data = fromfile(paths, allow_pickle=True)
+        return cls(inputs=input_data, fdir_results=fdir_results, on_linux=on_linux)
+
     @staticmethod
     def _check_occupancy_data(inputs):
         """Check whether there is occupancy data missing for each room.
@@ -474,6 +485,4 @@ if __name__ == "__main__":
 
     from constants import DIR_TESTJOB1_TM59
 
-    paths = create_paths(DIR_TESTJOB1_TM59)
-    tm59_input_data = fromfile(paths)
-    tm59_calc = Tm59CalcWizard(tm59_input_data)
+    calc = Tm59CalcWizard.from_files(DIR_TESTJOB1_TM59)
