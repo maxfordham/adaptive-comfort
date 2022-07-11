@@ -88,7 +88,7 @@ class Tm52CalcWizard:
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
-            fdir_results (Path): Used to override project path to save elsewhere.
+            fdir_results (Union[pathlib.Path, str]): Used to override project path to save elsewhere.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         self._check_occupancy_data(inputs)
@@ -108,6 +108,11 @@ class Tm52CalcWizard:
 
         Args:
             fdir (Union[pathlib.Path, str]): file directory containing numpy data.
+            fdir_results (Union[pathlib.Path, str], optional): Used to override project path to save elsewhere.
+            on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.. Defaults to True.
+
+        Returns:
+            _type_: _description_
         """
         paths = create_paths(fdir)
         input_data = fromfile(paths, allow_pickle=True)
@@ -386,7 +391,7 @@ class Tm52CalcWizard:
 
         Args:
             inputs (Tm52InputData): Class instance containing the required inputs.
-            fdir_results (Path): Override project path.
+            fdir_results (Union[pathlib.Path, str]): Override project path.
             on_linux (bool, optional): Whether running script in linux or windows. Defaults to True.
         """
         if fdir_results is None:
